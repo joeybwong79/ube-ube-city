@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>Ube Ube City</title>
+<style>
+html,body{height:100%;margin:0}
+body{background:#FFF6EC;color:#3B3140;font:18px/1.4 -apple-system,system-ui,sans-serif;display:grid;place-items:center;padding:24px;box-sizing:border-box}
+form[hidden]{display:none}form{width:min(100%,380px);background:#fff;border-radius:28px;padding:28px 24px;box-shadow:0 10px 30px rgba(59,49,64,.08);display:grid;gap:14px;text-align:center}
+h1{margin:0;font-size:30px;color:#8B6FC0}p{margin:0;color:#6E6377;font-size:16px}#wait{font-size:22px;font-weight:700;color:#8B6FC0}#wait[hidden]{display:none}
+input{font:inherit;font-size:22px;padding:14px 16px;border:3px solid #EFE4F8;border-radius:16px;text-align:center;outline:none}
+input:focus{border-color:#8B6FC0}
+button{font:inherit;font-size:24px;font-weight:700;color:#fff;background:#E0739B;border:0;border-radius:999px;padding:16px;box-shadow:0 6px 0 #D05F89}
+button:disabled{opacity:.6}#msg{min-height:1.4em;color:#C0392B;font-weight:600}
+</style></head><body>
+<form id="f"><h1>Ube Ube City</h1><p>A grown-up types the password once on this device.</p>
+<input id="pw" type="password" autocomplete="current-password" autocapitalize="off" autocorrect="off" placeholder="Password" aria-label="Password">
+<button id="go">Open</button><p id="msg" role="alert"></p></form>
+<p id="wait" hidden>Opening Ube Ube City…</p>
+<script>
+const APP = "app-f2b3ee9b58448518.bin", ROUNDS = 300000, MARK = "UBEUBE-OK\n", KEEP = 'ube-unlock-v1';
+// The locked app is fetched as bytes (never as text inside this page: see tools/publish_pages.py for why).
+let salt = null, body = null;
+const ready = fetch(APP).then(r => { if (!r.ok) throw new Error('app ' + r.status); return r.arrayBuffer() })
+  .then(b => { const bytes = new Uint8Array(b); salt = bytes.subarray(8, 16); body = bytes.subarray(16) });
+async function keyFrom(pw) {
+  await ready;
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+  return new Uint8Array(await crypto.subtle.deriveBits({ name:'PBKDF2', hash:'SHA-256', salt, iterations:ROUNDS }, base, 384));
+}
+async function open_(bits) {
+  const key = await crypto.subtle.importKey('raw', bits.slice(0, 32), 'AES-CBC', false, ['decrypt']);
+  const text = new TextDecoder().decode(await crypto.subtle.decrypt({ name:'AES-CBC', iv:bits.slice(32, 48) }, key, body));
+  if (!text.startsWith(MARK)) throw new Error('wrong');
+  return text.slice(MARK.length);
+}
+// Replace this page with the app, but only once this page has fully loaded (writing earlier mixes the two pages together).
+function show(html, bits) {
+  // The app unlocks its packs (recordings, songs, videos, the games' code) with the same key: hand it over first thing.
+  html = html.replace('<head>', () => '<head><script>window.UBE_KEY="' + btoa(String.fromCharCode(...bits.slice(0, 32))) + '"<\/script>');
+  const swap = () => { document.open(); document.write(html); document.close() };
+  if (document.readyState === 'complete') swap(); else window.addEventListener('load', swap, { once:true });
+}
+const f = document.getElementById('f'), msg = document.getElementById('msg'), go = document.getElementById('go');
+f.onsubmit = async e => {
+  e.preventDefault(); go.disabled = true; msg.textContent = '';
+  try {
+    const bits = await keyFrom(document.getElementById('pw').value);
+    const html = await open_(bits);
+    try { localStorage.setItem(KEEP, btoa(String.fromCharCode(...bits)) + '|' + btoa(String.fromCharCode(...salt))) } catch {}
+    show(html, bits);
+  } catch { msg.textContent = 'That password didn’t work. Try again.'; go.disabled = false }
+};
+// A shared link can carry the password after "#pw=" (Steffen, 14 Nov 2026: a link for a few people). The part
+// after # never leaves the device (it is not sent to the server); it is wiped from the address bar at once,
+// then used like a typed password, so this device stays unlocked afterwards.
+const fromLink = (() => {
+  const m = /^#pw=(.+)$/.exec(location.hash || '');
+  if (!m) return null;
+  try { history.replaceState(null, '', location.pathname + location.search) } catch {}
+  try { return decodeURIComponent(m[1]) } catch { return m[1] }
+})();
+// This device already unlocked it (and the password hasn't changed): open straight away.
+(async () => {
+  // A device that is already unlocked (or came by a link) sees "Opening…" while the app arrives, not the password box.
+  const wait = document.getElementById('wait');
+  let known = !!fromLink;
+  try { known ||= !!localStorage.getItem(KEEP) } catch {}
+  if (known) { f.hidden = true; wait.hidden = false }
+  try { await ready } catch { wait.hidden = true; f.hidden = false; msg.textContent = 'Could not load the app. Check the internet and reload.'; go.disabled = true; return }
+  if (fromLink) {
+    f.hidden = true;
+    try {
+      const bits = await keyFrom(fromLink);
+      const html = await open_(bits);
+      try { localStorage.setItem(KEEP, btoa(String.fromCharCode(...bits)) + '|' + btoa(String.fromCharCode(...salt))) } catch {}
+      show(html, bits); return;
+    } catch { msg.textContent = 'That link’s password didn’t work. Type the password instead.' }
+  }
+  try {
+    const [k, s] = (localStorage.getItem(KEEP) || '').split('|');
+    if (k && s === btoa(String.fromCharCode(...salt))) { f.hidden = true; const kept = Uint8Array.from(atob(k), c => c.charCodeAt(0)); show(await open_(kept), kept); return }
+  } catch { f.hidden = false }
+  wait.hidden = true; f.hidden = false; document.getElementById('pw').focus();
+})();
+</script></body></html>
