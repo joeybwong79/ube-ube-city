@@ -1524,7 +1524,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
   };
   window.addEventListener('error', function (e) { reportProblem('error: ' + e.message + ' @' + e.lineno + ':' + e.colno + ' ' + ((e.error && e.error.stack) || '').slice(0, 400)) });
   window.addEventListener('unhandledrejection', function (e) { var r = e.reason; reportProblem('promise: ' + ((r && (r.stack || r.message)) || r)) });
-  var BUILD = '20261127-090328';
+  var BUILD = '20261127-091356';
   reportProblem('opened build ' + BUILD + ' ' + navigator.userAgent + ' ' + innerWidth + 'x' + innerHeight);
   // The iPad keeps its own saved copy (so the app opens while the Mac sleeps). When the Mac is reachable and has a newer build, reload once to get it.
   function checkForUpdate() {
@@ -4955,7 +4955,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // recorded-voice settings and clips. Then the page reloads into the first-time setup.
     wiping = true;
     clearTimeout(syncTimer);
-    try { localStorage.clear() } catch {}
+    // Everything except other pages on the same web address that keep their own keys (the office page, "office:...").
+    try { Object.keys(localStorage).forEach(k => { if (!k.startsWith('office:')) localStorage.removeItem(k) }) } catch {}
     try { sessionStorage.clear() } catch {}
     const gone = new Promise(done => {
       try { const r = indexedDB.deleteDatabase('josephine-voice'); r.onsuccess = r.onerror = r.onblocked = done } catch { done() }
