@@ -1524,7 +1524,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
   };
   window.addEventListener('error', function (e) { reportProblem('error: ' + e.message + ' @' + e.lineno + ':' + e.colno + ' ' + ((e.error && e.error.stack) || '').slice(0, 400)) });
   window.addEventListener('unhandledrejection', function (e) { var r = e.reason; reportProblem('promise: ' + ((r && (r.stack || r.message)) || r)) });
-  var BUILD = '20261127-085914';
+  var BUILD = '20261127-090328';
   reportProblem('opened build ' + BUILD + ' ' + navigator.userAgent + ' ' + innerWidth + 'x' + innerHeight);
   // The iPad keeps its own saved copy (so the app opens while the Mac sleeps). When the Mac is reachable and has a newer build, reload once to get it.
   function checkForUpdate() {
@@ -2162,7 +2162,8 @@ document.addEventListener('DOMContentLoaded', () => {
       try { fetch('/progress', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(state), keepalive:true }).catch(() => {}) } catch {}
     }, 1500);
   }
-  const save = () => { state.savedAt = Date.now(); try { localStorage.setItem(STORE, JSON.stringify(state)) } catch {} try { localStorage.setItem('ube-city:tv-setup', JSON.stringify(state.family.tv)) } catch {} try { localStorage.setItem('ube-city:child', JSON.stringify({ grade: state.family.child.grade ?? null })) } catch {} try { localStorage.setItem('ube-city:languages', JSON.stringify({ codes: state.family.languages || [] })) } catch {} pushProgress() };
+  let wiping = false;   // set by "Clear all": nothing is saved again before the page reloads
+  const save = () => { if (wiping) return; state.savedAt = Date.now(); try { localStorage.setItem(STORE, JSON.stringify(state)) } catch {} try { localStorage.setItem('ube-city:tv-setup', JSON.stringify(state.family.tv)) } catch {} try { localStorage.setItem('ube-city:child', JSON.stringify({ grade: state.family.child.grade ?? null })) } catch {} try { localStorage.setItem('ube-city:languages', JSON.stringify({ codes: state.family.languages || [] })) } catch {} pushProgress() };
   // On open: if the Mac has newer progress (for example after an address change), use it; if this copy is newer, send it up.
   if (location.protocol === 'http:') {
     try {
@@ -4949,10 +4950,19 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     guClearDisarm();
-    state.days = {}; state.stickers = []; state.readStories = {};
-    setNewSticker(false);
-    forgetOpenActivities(); guHideToast(); save(); renderGuHome();
-    rich($('#resetMsg'), '{check}All progress is cleared. Tap ' + houseName() + ' to start fresh.');
+    // Everything this app keeps on the device goes (Steffen, 27 Nov 2026: "a full, like say like factory reset... you get
+    // brought back to the start screen where you need to input name"): the setup, every game's save, the jar, the
+    // recorded-voice settings and clips. Then the page reloads into the first-time setup.
+    wiping = true;
+    clearTimeout(syncTimer);
+    try { localStorage.clear() } catch {}
+    try { sessionStorage.clear() } catch {}
+    const gone = new Promise(done => {
+      try { const r = indexedDB.deleteDatabase('josephine-voice'); r.onsuccess = r.onerror = r.onblocked = done } catch { done() }
+      setTimeout(done, 1500);
+    });
+    rich($('#resetMsg'), 'Clearing everything…');
+    gone.then(() => location.reload());
   }
 
   /* ---------- grown-ups: testing ---------- */
@@ -5159,7 +5169,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="gu-lbl">Start over</div>
       <div class="gu-grp">
         <div class="gu-row"><span class="t">Start today over<small>Clears today’s stars, story and today’s stickers, so every step can be done again.</small></span><button class="gu-sbtn inrow" id="resetToday" data-act="reset-today">${ico('rotate-ccw')} Start over</button></div>
-        <div class="gu-row"><span class="t">Clear all progress<small>Clears every day, the brushing streak, all stickers and stories read. The setup and recorded voices stay.</small></span><button class="gu-sbtn inrow danger" id="resetAll" data-act="reset-all">${ico('trash-2')} Clear all</button></div>
+        <div class="gu-row"><span class="t">Clear all progress<small>Clears everything on this device: the setup, every game, the jar and the recorded voices. The app then starts again from the first question.</small></span><button class="gu-sbtn inrow danger" id="resetAll" data-act="reset-all">${ico('trash-2')} Clear all</button></div>
       </div>
       <p class="gu-hint" id="guClearHint">${GU_CLEAR_HINT}</p>
       <p class="gu-hint" id="resetMsg" aria-live="polite" style="font-weight:600"></p>`;
