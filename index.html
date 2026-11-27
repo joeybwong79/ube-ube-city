@@ -1224,6 +1224,12 @@ button.gu-switch:before{content:"";position:absolute;inset:-8px -4px}
 .gu-hear p{margin:0;font-size:15px;line-height:1.35}
 .gu-hear small{display:block;color:var(--jb-muted);font-size:13px;margin-top:2px}
 .gu-onipad{display:none}
+/* the grown-ups' corner pill (27 Nov 2026, mockups/no-setup-gate/SHEET.md) */
+.city-setup{position:absolute;right:max(14px,env(safe-area-inset-right));top:calc(max(12px,env(safe-area-inset-top)) + 58px);min-height:44px;margin:0;padding:0 16px;border:0;border-radius:999px;background:rgba(255,255,255,.92);box-shadow:0 4px 14px rgba(120,60,120,.15);font:700 15px/1 var(--f-ui);color:var(--jb-violet-deep);white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.city-setup[hidden]{display:none}
+.city-setup:active{background:var(--jb-violet-tint)}
+@media (min-width:700px){.city-setup{top:calc(max(12px,env(safe-area-inset-top)) + 66px);font-size:16px}}
+@media (orientation:landscape) and (max-height:500px){.city-setup{top:auto;bottom:calc(18px + env(safe-area-inset-bottom));right:calc(18px + env(safe-area-inset-right))}}   /* sideways phone: bottom right, mirroring the jar (design round 2) */
 /* first-time setup, over the city */
 #guSetup{position:absolute;inset:0;z-index:80;background:var(--jb-ivory);overflow-y:auto;overscroll-behavior:contain}
 #guSetup[hidden]{display:none}
@@ -1276,6 +1282,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
   <section class="screen on" id="city" aria-label="Ube Ube City">
     <div id="cityView"><div id="cityWorld"><img class="city-bg" data-art="city-world" alt="Ube Ube City"><div class="city-dusk"></div></div></div>
     <div class="city-hud"><span class="chip">Ube Ube City</span><button class="lock-btn" id="cityLock" aria-label="Grown-ups: press and hold"></button></div>
+    <button class="city-setup" id="citySetup" type="button" hidden></button>
     <button class="city-jar" id="cityJar" aria-label="My jar"><img data-art="city-jar" alt=""><span id="cityJarText">$0</span></button>
     <div id="cityCard"><img alt=""><div><h2></h2><p></p></div><button class="big-btn go"></button></div>
     <div id="cityInto"></div>
@@ -1540,7 +1547,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
   };
   window.addEventListener('error', function (e) { reportProblem('error: ' + e.message + ' @' + e.lineno + ':' + e.colno + ' ' + ((e.error && e.error.stack) || '').slice(0, 400)) });
   window.addEventListener('unhandledrejection', function (e) { var r = e.reason; reportProblem('promise: ' + ((r && (r.stack || r.message)) || r)) });
-  var BUILD = '20261127-140509';
+  var BUILD = '20261127-141311';
   reportProblem('opened build ' + BUILD + ' ' + navigator.userAgent + ' ' + innerWidth + 'x' + innerHeight);
   // The iPad keeps its own saved copy (so the app opens while the Mac sleeps). When the Mac is reachable and has a newer build, reload once to get it.
   function checkForUpdate() {
@@ -3027,10 +3034,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   $('#cityJar').onclick = e => { e.stopPropagation(); openJarCard() };
   $('#thingsJar').onclick = e => { e.stopPropagation(); openJarCard() };   // the same pill on the cover of "My things"
+  function renderCitySetupPill() {
+    const b = $('#citySetup'); if (!b) return;
+    const f = family(), t = f.setupDone === false ? 'Grown-ups: set it up' : (!isStandalone() && !f.homeScreen ? 'Grown-ups: add to Home Screen' : '');
+    b.hidden = !t; b.textContent = t; if (t) b.setAttribute('aria-label', t);
+  }
   function renderCity() {
     buildCity();
     if (CITY.home.tagEl && CITY.home.tagEl.textContent !== CITY.home.name) { CITY.home.tagEl.textContent = CITY.home.name; CITY.home.spot.setAttribute('aria-label', CITY.home.name) }   // the house is named after the child
     renderCityJar();
+    renderCitySetupPill();
     const hour = new Date().getHours();
     $('#city').classList.toggle('evening', hour >= 17 && hour < 20);
     $('#city').classList.toggle('night', hour >= 20 || hour < 6);
@@ -5703,7 +5716,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     $('#guSetup').innerHTML = `<div class="gu-setup">
-      <div class="gu-skip"><button data-act="su-skip">Skip</button></div>
+      <div class="gu-skip"><button data-act="su-notnow">Not now</button></div>
       <div class="gu-hi"><img src="${artSrc('ube-cheer')}" alt="Ube Ube waving"><div>Hi! Three quick questions and your child’s day is ready.</div></div>
       <h1 class="gu-big">Who is this for?</h1>
       <div class="gu-field"><label for="suName">First name</label><input class="gu-in" id="suName" value="${guEsc(d.name)}" maxlength="30" autocomplete="off"></div>
@@ -5717,6 +5730,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ${stepper}
       <button class="gu-btn solid" id="suMake" data-act="su-make">${guEsc(suMakeLabel())}</button>
       <p class="su-hint">Starts with a usual morning and evening. To change anything later, press and hold the lock in the corner, then answer a grown-up question.</p>
+      <button class="gu-later" data-act="su-skip">Skip, and use the usual day</button>
     </div>`;
   }
   function openSetup() {
@@ -5735,10 +5749,15 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#guSetup').hidden = true; $('#guSetup').innerHTML = ''; suDraft = null;
     applyChildName(); applyWalker(); guard('renderCity', renderCity);
   }
+  $('#citySetup').addEventListener('click', () => {
+    if (family().setupDone === false) openSetup();
+    else { suDraft = {}; suOpen = null; suStage = 'home'; renderSetup(); $('#guSetup').hidden = false; $('#guSetup').scrollTop = 0 }
+  });
   $('#guSetup').addEventListener('click', e => {
     const el = e.target.closest('[data-act]'); if (!el || !suDraft) return;
     const a = el.dataset.act, d = suDraft;
-    if (a === 'su-skip') closeSetup(false);
+    if (a === 'su-notnow') { $('#guSetup').hidden = true; $('#guSetup').innerHTML = ''; suDraft = null; guard('renderCity', renderCity) }
+    else if (a === 'su-skip') closeSetup(false);
     else if (a === 'su-make') closeSetup(true);
     else if (a === 'su-done') finishSetup('done');
     else if (a === 'su-later') finishSetup('later');
@@ -5877,7 +5896,6 @@ document.addEventListener('DOMContentLoaded', () => {
     state.settings.stickersV2 = true; save();
   }
   guard('city', () => go('city'));
-  if (family().setupDone === false) guard('first-time setup', openSetup);
   guard('checkReminders', checkReminders);
   // Split build: a few seconds after the home screen is up, fetch the games' code files quietly (nothing is held; the
   // browser keeps them), so the first tap on a tile is quick.
