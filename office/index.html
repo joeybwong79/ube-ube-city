@@ -28,7 +28,14 @@ button { font: 600 16px var(--body); border: 0; background: var(--pink); color: 
 input:focus-visible, button:focus-visible { outline: 3px solid var(--pink); outline-offset: 2px }
 .err { color: var(--ask); font-weight: 600 }
 .err:empty { display: none }
-ol { margin: 0; padding-left: 20px; color: var(--muted); font-size: 15px } li { margin: 4px 0 }
+ol { margin: 0; padding-left: 22px; font-size: 16px } li { margin: 6px 0 }
+.how { display: flex; flex-direction: column; gap: 12px }
+.how h2 { font: 800 24px/1.15 var(--display); color: var(--violet); margin: 8px 0 0 }
+.how .who { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px }
+.how h3 { font: 700 20px var(--display); color: var(--violet); margin: 0 }
+.go { align-self: flex-start; display: inline-flex; align-items: center; min-height: 46px; padding: 11px 20px; border-radius: 999px; background: var(--violet); color: #fff; font-weight: 600; text-decoration: none }
+.go:focus-visible { outline: 3px solid var(--pink); outline-offset: 2px }
+.small { font-size: 14px }
 a { color: var(--violet) }
 </style>
 </head>
@@ -38,15 +45,38 @@ a { color: var(--violet) }
   <p class="muted" id="msg">Opening the office…</p>
   <form id="form" hidden>
     <label for="key">Your GitHub key</label>
-    <p class="muted">The office is private to Joey and Steffen. Paste your GitHub key once on this phone or computer; it stays on this device.</p>
+    <p class="muted">The office is private to Joey and Steffen. Paste your GitHub key once on this phone or computer; it stays on this device. No key yet? The steps are just below.</p>
     <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_… or ghp_…" required>
     <p class="err" id="err" role="status"></p>
     <button type="submit">Open the office</button>
-    <ol>
-      <li>Joey: on GitHub, Settings › Developer settings › Fine-grained tokens › Generate. Repository: <b>ube-ube-city-app</b> only; permission <b>Contents: Read and write</b>.</li>
-      <li>Steffen (a collaborator, so a fine-grained key can't reach Joey's repo): Settings › Developer settings › Tokens (classic) › Generate, with the <b>repo</b> box ticked.</li>
-    </ol>
   </form>
+  <section class="how" id="how" aria-labelledby="how-h" hidden>
+    <h2 id="how-h">No key yet? Make one in two minutes</h2>
+    <p class="muted">Sign in to GitHub first, then follow the steps for your name. You only do this once per phone or computer.</p>
+    <div class="who">
+      <h3>Steffen</h3>
+      <a class="go" href="https://github.com/settings/tokens/new?scopes=repo&amp;description=Ube%20Ube%20Office" target="_blank" rel="noopener">Make my key on GitHub</a>
+      <ol>
+        <li>The page opens with the name "Ube Ube Office" and the <b>repo</b> box already ticked. Leave them as they are.</li>
+        <li>Expiration: pick <b>No expiration</b> (or 90 days if you'd rather redo it now and then).</li>
+        <li>Scroll to the bottom and press <b>Generate token</b>.</li>
+        <li>Copy the key it shows (it starts with <b>ghp_</b>). GitHub shows it only once.</li>
+        <li>Come back here, paste it in the box above and press <b>Open the office</b>.</li>
+      </ol>
+    </div>
+    <div class="who">
+      <h3>Joey</h3>
+      <a class="go" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Make my key on GitHub</a>
+      <ol>
+        <li>Token name: <b>Ube Ube Office</b>. Expiration: the longest it offers, or a date you like.</li>
+        <li>Repository access: <b>Only select repositories</b>, then pick <b>ube-ube-city-app</b>.</li>
+        <li>Permissions: open <b>Repository permissions</b>, find <b>Contents</b> and set it to <b>Read and write</b>.</li>
+        <li>Press <b>Generate token</b> at the bottom and copy the key (it starts with <b>github_pat_</b>). GitHub shows it only once.</li>
+        <li>Come back here, paste it in the box above and press <b>Open the office</b>.</li>
+      </ol>
+    </div>
+    <p class="muted small">Why two kinds: the office lives in Joey's private repo. Joey owns it, so her key can be limited to just that repo; Steffen is invited to it, and GitHub only lets an invited person use the "classic" kind. The key stays on this device and is only ever sent to GitHub. To use the office on another phone, make it there the same way, or copy the same key over.</p>
+  </section>
 </main>
 <script>
 const REPO = 'joeybwong79/ube-ube-city-app';
@@ -58,11 +88,11 @@ async function file(path, key) {
   if (!r.ok) throw Object.assign(new Error(path + ': ' + r.status), { status: r.status });
   return r.text();
 }
-function ask(text) { $('#msg').hidden = true; $('#form').hidden = false; $('#err').textContent = text || ''; $('#key').focus() }
+function ask(text) { $('#msg').hidden = true; $('#form').hidden = false; $('#how').hidden = false; $('#err').textContent = text || ''; $('#key').focus() }
 async function openOffice() {
   const key = getKey();
   if (!key) return ask();
-  $('#msg').hidden = false; $('#form').hidden = true; $('#msg').textContent = 'Opening the office…';
+  $('#msg').hidden = false; $('#form').hidden = true; $('#how').hidden = true; $('#msg').textContent = 'Opening the office…';
   try {
     const [page, store] = await Promise.all([file('office/office.html', key), file('office/store.js', key)]);
     const at = page.indexOf('<body>');
