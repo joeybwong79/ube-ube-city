@@ -514,10 +514,9 @@ select{flex:1;min-width:0;font:inherit;font-size:16px;padding:11px 10px;border:2
 .lock-btn{flex-shrink:0;width:48px;height:48px;border-radius:50%;background:#fff;border:1px solid var(--jb-line-v);display:grid;place-items:center;color:var(--jb-soft);transition:box-shadow .9s linear,background .2s}
 .lock-btn svg{width:22px;height:22px}
 .city-hud .lock-btn{margin-left:auto;pointer-events:auto;border:0;box-shadow:0 4px 14px rgba(120,60,120,.15)}
-.city-hud .lock-btn.holding{box-shadow:0 0 0 7px rgba(139,111,192,.55),0 4px 14px rgba(120,60,120,.15)}
 .su-hint{text-align:center;font-size:14px;font-weight:600;color:var(--jb-soft);margin:10px 0 0;line-height:1.4}
 @media (min-width:700px){.su-hint{font-size:15px}}
-.lock-btn.holding{background:var(--jb-violet-tint);box-shadow:0 0 0 7px var(--jb-lilac)}
+.lock-btn:active{background:var(--jb-violet-tint)}
 #home .clock{background:#fff;border:0;border-radius:28px;box-shadow:var(--jb-shadow)}
 #home .clock-text b{font-family:var(--f-ui);font-weight:700;color:var(--jb-ink)}
 #home .clock-text small{font-family:var(--f-ui);color:var(--jb-muted)}
@@ -1281,7 +1280,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
   <!-- THE CITY (Joey, 25 Nov 2026): the first screen; each building opens a part of the app -->
   <section class="screen on" id="city" aria-label="Ube Ube City">
     <div id="cityView"><div id="cityWorld"><img class="city-bg" data-art="city-world" alt="Ube Ube City"><div class="city-dusk"></div></div></div>
-    <div class="city-hud"><span class="chip">Ube Ube City</span><button class="lock-btn" id="cityLock" aria-label="Grown-ups: press and hold"></button></div>
+    <div class="city-hud"><span class="chip">Ube Ube City</span><button class="lock-btn" id="cityLock" aria-label="Grown-ups"></button></div>
     <button class="city-setup" id="citySetup" type="button" hidden></button>
     <button class="city-jar" id="cityJar" aria-label="My jar"><img data-art="city-jar" alt=""><span id="cityJarText">$0</span></button>
     <div id="cityCard"><img alt=""><div><h2></h2><p></p></div><button class="big-btn go"></button></div>
@@ -1290,7 +1289,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
 
   <!-- HOME -->
   <section class="screen" id="home">
-    <header class="topbar"><div class="today-block"><b id="dayName"></b><span id="datePill"></span></div><span class="spacer"></span><span class="pill test-pill" id="testPill" hidden>Testing</span><span class="home-dots" id="homeDots"></span><span class="pill" id="typePill"></span><button class="song-btn" id="songBtn" aria-label="Play the Ube Ube song" hidden></button><button class="lock-btn" id="lockBtn" aria-label="Grown-ups: press and hold"></button></header>
+    <header class="topbar"><div class="today-block"><b id="dayName"></b><span id="datePill"></span></div><span class="spacer"></span><span class="pill test-pill" id="testPill" hidden>Testing</span><span class="home-dots" id="homeDots"></span><span class="pill" id="typePill"></span><button class="song-btn" id="songBtn" aria-label="Play the Ube Ube song" hidden></button><button class="lock-btn" id="lockBtn" aria-label="Grown-ups"></button></header>
     <div class="home-left">
     <div class="hello"><span class="bday-icons" aria-hidden="true"><i data-ico="party-popper" data-fill="cotton"></i><i data-ico="cake" data-fill="gold"></i><i data-ico="party-popper" data-fill="lilac"></i></span><img class="jo" data-walker="josephine" alt="A girl in a pink dress with a backpack"><h1 id="helloTitle"></h1></div>
     <div class="alert-bar" id="alertBar" hidden role="status"></div>
@@ -1547,7 +1546,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
   };
   window.addEventListener('error', function (e) { reportProblem('error: ' + e.message + ' @' + e.lineno + ':' + e.colno + ' ' + ((e.error && e.error.stack) || '').slice(0, 400)) });
   window.addEventListener('unhandledrejection', function (e) { var r = e.reason; reportProblem('promise: ' + ((r && (r.stack || r.message)) || r)) });
-  var BUILD = '20261127-141500';
+  var BUILD = '20261127-142128';
   reportProblem('opened build ' + BUILD + ' ' + navigator.userAgent + ' ' + innerWidth + 'x' + innerHeight);
   // The iPad keeps its own saved copy (so the app opens while the Mac sleeps). When the Mac is reachable and has a newer build, reload once to get it.
   function checkForUpdate() {
@@ -4877,7 +4876,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ids.length > KITCHEN_SKILL_MAX) ids.sort((a, b) => (skills[a].last || '').localeCompare(skills[b].last || '')).slice(0, ids.length - KITCHEN_SKILL_MAX).forEach(id => delete skills[id]);
     save();
   }
-  /* ---------- grown-ups: a small lock in the corner — press and hold to open ---------- */
+  /* ---------- grown-ups: a small lock in the corner; a tap opens the grown-up question (Steffen, 27 Nov 2026: no more press and hold) ---------- */
   $('#songBtn').innerHTML = ICON.music; paintSongBtn();
   $('#songBtn').onclick = () => {
     wakeAudio();
@@ -4888,12 +4887,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#topitHear').onclick = () => { wakeAudio(); if (topit && topit.cards) speak(`You have ${topit.cards.jo}. Matcha Frog has ${topit.cards.frog}. Which number is bigger?`, null, { lines:[`num-${topit.cards.jo}`, `num-${topit.cards.frog}`, 'topit-which'] }) };
   $('#readPrev').innerHTML = ICON.left; $('#quizBack').innerHTML = ICON.left; $('#quizHear').innerHTML = ICON.sound + '<span>Hear it</span>';
   document.querySelectorAll('#home .hear-dot').forEach(el => el.innerHTML = ICON.sound);
-  let lockHold = null;
-  const wireLock = btn => {   // the one press-and-hold lock, on the house's top bar and on the city map
+  const wireLock = btn => {   // the one lock, on the house's top bar and on the city map: a tap, then the grown-up question
     btn.innerHTML = ICON.lock;
-    btn.addEventListener('pointerdown', () => { btn.classList.add('holding'); clearTimeout(lockHold); lockHold = setTimeout(() => { btn.classList.remove('holding'); openGrownups() }, 900) });
-    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => btn.addEventListener(ev, () => { clearTimeout(lockHold); btn.classList.remove('holding') }));
-    btn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openGrownups() });
+    btn.addEventListener('click', e => { e.stopPropagation(); openGrownups() });
   };
   wireLock($('#lockBtn')); wireLock($('#cityLock'));
 
@@ -5729,7 +5725,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="gu-pair">${tbtn('leave')}${tbtn('bed')}</div>
       ${stepper}
       <button class="gu-btn solid" id="suMake" data-act="su-make">${guEsc(suMakeLabel())}</button>
-      <p class="su-hint">Starts with a usual morning and evening. To change anything later, press and hold the lock in the corner, then answer a grown-up question.</p>
+      <p class="su-hint">Starts with a usual morning and evening. To change anything later, tap the lock in the corner, then answer a grown-up question.</p>
       <button class="gu-later" data-act="su-skip">Skip, and use the usual day</button>
     </div>`;
   }
