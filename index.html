@@ -514,6 +514,7 @@ select{flex:1;min-width:0;font:inherit;font-size:16px;padding:11px 10px;border:2
 .lock-btn{flex-shrink:0;width:48px;height:48px;border-radius:50%;background:#fff;border:1px solid var(--jb-line-v);display:grid;place-items:center;color:var(--jb-soft);transition:box-shadow .9s linear,background .2s}
 .lock-btn svg{width:22px;height:22px}
 .city-hud .lock-btn{margin-left:auto;pointer-events:auto;border:0;box-shadow:0 4px 14px rgba(120,60,120,.15)}
+.city-hud .lock-btn.holding{box-shadow:0 0 0 7px rgba(139,111,192,.55),0 4px 14px rgba(120,60,120,.15)}
 .su-hint{text-align:center;font-size:14px;font-weight:600;color:var(--jb-soft);margin:10px 0 0;line-height:1.4}
 @media (min-width:700px){.su-hint{font-size:15px}}
 .lock-btn.holding{background:var(--jb-violet-tint);box-shadow:0 0 0 7px var(--jb-lilac)}
@@ -1053,7 +1054,8 @@ select{flex:1;min-width:0;font:inherit;font-size:16px;padding:11px 10px;border:2
 .gu{font-family:var(--f-ui);color:var(--jb-ink);text-align:left}
 .gu button{font-family:inherit}
 #guHomeBox{margin-bottom:12px}
-.gu-nav{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;background:#e6d9f6;margin-top:calc(-14px - env(safe-area-inset-top));padding:calc(18px + env(safe-area-inset-top)) 0 14px;min-height:64px}
+/* The bar runs full bleed: from the very top of the screen and edge to edge (design review, 27 Nov 2026). */
+.gu-nav{display:flex;align-items:center;gap:12px;position:sticky;top:calc(-14px - env(safe-area-inset-top));z-index:20;background:#e6d9f6;margin:calc(-14px - env(safe-area-inset-top)) calc(-1 * max(16px,(100vw - 520px)/2)) 0;padding:calc(18px + env(safe-area-inset-top)) max(16px,(100vw - 520px)/2) 14px;min-height:64px}
 #grownups.gu-scrolled .gu-nav{box-shadow:0 6px 12px -8px rgba(59,49,64,.18)}
 .gu-wx{display:flex;gap:8px}
 .gu-wx .gu-in{flex:1;min-width:0;width:auto}
@@ -1127,6 +1129,7 @@ select.gu-vin{direction:rtl;cursor:pointer}
 .gu-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .gu-field>label,.gu-field>.gl{font-size:14px;font-weight:600;color:var(--jb-muted);padding-left:4px}
 .gu-in{background:#fff;border:2px solid var(--jb-line-v);border-radius:16px;padding:13px 14px;font:inherit;font-size:17px;min-height:52px;width:100%;color:var(--jb-ink)}
+.gu-in:focus{outline:none;border-color:var(--jb-violet)}
 .gu-pick{display:flex;flex-wrap:wrap;gap:8px}
 .gu-pick button{border:0;background:none;padding:0;border-radius:50%}
 .gu-pick .gu-face{width:50px;height:50px}
@@ -1524,7 +1527,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
   };
   window.addEventListener('error', function (e) { reportProblem('error: ' + e.message + ' @' + e.lineno + ':' + e.colno + ' ' + ((e.error && e.error.stack) || '').slice(0, 400)) });
   window.addEventListener('unhandledrejection', function (e) { var r = e.reason; reportProblem('promise: ' + ((r && (r.stack || r.message)) || r)) });
-  var BUILD = '20261127-111052';
+  var BUILD = '20261127-111556';
   reportProblem('opened build ' + BUILD + ' ' + navigator.userAgent + ' ' + innerWidth + 'x' + innerHeight);
   // The iPad keeps its own saved copy (so the app opens while the Mac sleeps). When the Mac is reachable and has a newer build, reload once to get it.
   function checkForUpdate() {
@@ -5267,7 +5270,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const guTownLabel = r => [r.name, r.country].filter(Boolean).join(', ');
   async function guGeoFetch(name, count) {
     const reply = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=${count}&language=en`);
-    return (await reply.json()).results || [];
+    return ((await reply.json()).results || []).filter(r => /^PPL/.test(r.feature_code || ''));   // towns only, no airports or regions (design review, 27 Nov 2026)
   }
   // "Sydney Australia" and "Sydney, Australia" both find Sydney: the whole text first, then the town part with the country as a filter.
   async function guTownSearch(text) {
@@ -5278,7 +5281,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (head.length < 2) return [];
       return byCountry(await guGeoFetch(head, 20), rest).slice(0, 5);
     }
-    let rows = await guGeoFetch(t, 5);
+    let rows = await guGeoFetch(t, 15);
     if (rows.length) return rows.slice(0, 5);
     const words = t.split(' ');
     for (let k = 1; k <= 2 && words.length > k; k++) {
