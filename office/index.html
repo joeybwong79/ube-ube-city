@@ -79,6 +79,9 @@ a { color: var(--violet) }
   </section>
 </main>
 <script>
+// All in one function, so none of its names stay behind: the office page replaces this one in the same window
+// (document.open keeps the window), and a name left here, like $, would stop the office's own script from running.
+(() => {
 const REPO = 'joeybwong79/ube-ube-city-app';
 const $ = s => document.querySelector(s);
 const getKey = () => { try { return localStorage.getItem('office:token') } catch (e) { return null } };
@@ -105,6 +108,7 @@ async function openOffice() {
 }
 $('#form').addEventListener('submit', e => { e.preventDefault(); const v = $('#key').value.trim(); if (!v) return; setKey(v); openOffice() });
 openOffice();
+})();
 </script>
 </body>
 </html>
