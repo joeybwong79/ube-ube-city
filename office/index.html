@@ -92,19 +92,34 @@ async function file(path, key) {
   return r.text();
 }
 function ask(text) { $('#msg').hidden = true; $('#form').hidden = false; $('#how').hidden = false; $('#err').textContent = text || ''; $('#key').focus() }
+// Which page: ?p=<page> (office/pages.json lists them); none means Joey's office.
+function pageInfo() {
+  const p = (new URLSearchParams(location.search).get('p') || 'office').replace(/[^a-z0-9-]/gi, '');
+  return p === 'office' ? { page: 'office', file: 'office/office.html', data: 'office/board.json', base: 'office/' }
+    : { page: p, file: `office/pages/${p}/index.html`, data: `office/data/${p}.json`, base: `office/pages/${p}/` };
+}
 async function openOffice() {
   const key = getKey();
   if (!key) return ask();
   $('#msg').hidden = false; $('#form').hidden = true; $('#how').hidden = true; $('#msg').textContent = 'Opening the office…';
-  try {
-    const [page, store] = await Promise.all([file('office/office.html', key), file('office/store.js', key)]);
-    const at = page.indexOf('<body>');
-    const html = at < 0 ? '<script>' + store + '<\/script>' + page : page.slice(0, at + 6) + '<script>' + store + '<\/script>' + page.slice(at + 6);
-    document.open(); document.write(html); document.close();
-  } catch (e) {
+  const info = pageInfo();
+  let store;
+  try { store = await file('office/store.js', key) } catch (e) {
     if (e.status === 401 || e.status === 403 || e.status === 404) { setKey(null); ask('That key could not open the office (GitHub said ' + e.status + '). Check it can read ube-ube-city-app and paste it again.') }
     else ask('GitHub could not be reached just now. Try again in a moment.');
+    return;
   }
+  let page;
+  try { page = await file(info.file, key) } catch (e) {
+    $('#msg').innerHTML = e.status === 404 ? 'There is no office page called “' + info.page.replace(/[<>&]/g, '') + '”. <a href="?">Open the office</a>.' : 'GitHub could not be reached just now. Try again in a moment.';
+    return;
+  }
+  // The runtime goes first, before the page's own scripts: it gives the page its data, its pictures and the Office button.
+  const boot = '<script>window.__OFFICE=' + JSON.stringify(info).replace(/</g, '\\u003c') + '<\/script><script>' + store + '<\/script>';
+  const head = page.search(/<head(?:\s[^>]*)?>/i), body = page.search(/<body(?:\s[^>]*)?>/i);
+  const at = head >= 0 ? head + page.slice(head).indexOf('>') + 1 : body >= 0 ? body + page.slice(body).indexOf('>') + 1 : 0;
+  const html = page.slice(0, at) + boot + page.slice(at);
+  document.open(); document.write(html); document.close();
 }
 $('#form').addEventListener('submit', e => { e.preventDefault(); const v = $('#key').value.trim(); if (!v) return; setKey(v); openOffice() });
 openOffice();
