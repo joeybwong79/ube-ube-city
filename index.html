@@ -513,6 +513,9 @@ select{flex:1;min-width:0;font:inherit;font-size:16px;padding:11px 10px;border:2
 .song-btn.night{color:var(--jb-violet);border-color:var(--jb-line-v)}.song-btn.night.on{background:var(--jb-violet);border-color:var(--jb-violet);color:#fff;animation-duration:2.4s}
 .lock-btn{flex-shrink:0;width:48px;height:48px;border-radius:50%;background:#fff;border:1px solid var(--jb-line-v);display:grid;place-items:center;color:var(--jb-soft);transition:box-shadow .9s linear,background .2s}
 .lock-btn svg{width:22px;height:22px}
+.city-hud .lock-btn{margin-left:auto;pointer-events:auto;border:0;box-shadow:0 4px 14px rgba(120,60,120,.15)}
+.su-hint{text-align:center;font-size:14px;font-weight:600;color:var(--jb-soft);margin:10px 0 0;line-height:1.4}
+@media (min-width:700px){.su-hint{font-size:15px}}
 .lock-btn.holding{background:var(--jb-violet-tint);box-shadow:0 0 0 7px var(--jb-lilac)}
 #home .clock{background:#fff;border:0;border-radius:28px;box-shadow:var(--jb-shadow)}
 #home .clock-text b{font-family:var(--f-ui);font-weight:700;color:var(--jb-ink)}
@@ -1041,7 +1044,7 @@ select{flex:1;min-width:0;font:inherit;font-size:16px;padding:11px 10px;border:2
   #cityCard h2{font-size:21px}#cityCard p{font-size:16px;margin-top:.1em}
   #cityCard .big-btn{grid-column:1/-1;margin:0;width:100%;min-width:0;min-height:56px;padding:0 1em;font-size:22px}
 }
-.city-tag,.city-badge{translate:var(--tx,0) var(--ty,0);font-family:var(--f-display)}
+.city-tag,.city-badge{translate:var(--tx,0) var(--ty,0);font-family:var(--f-display);white-space:nowrap}
 #cityInto{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s}
 #cityInto.on{opacity:1}
 #games #playKitchen,#games #playVet{display:none!important}
@@ -1244,7 +1247,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
   <!-- THE CITY (Joey, 25 Nov 2026): the first screen; each building opens a part of the app -->
   <section class="screen on" id="city" aria-label="Ube Ube City">
     <div id="cityView"><div id="cityWorld"><img class="city-bg" data-art="city-world" alt="Ube Ube City"><div class="city-dusk"></div></div></div>
-    <div class="city-hud"><span class="chip">Ube Ube City</span></div>
+    <div class="city-hud"><span class="chip">Ube Ube City</span><button class="lock-btn" id="cityLock" aria-label="Grown-ups: press and hold"></button></div>
     <button class="city-jar" id="cityJar" aria-label="My jar"><img data-art="city-jar" alt=""><span id="cityJarText">$0</span></button>
     <div id="cityCard"><img alt=""><div><h2></h2><p></p></div><button class="big-btn go"></button></div>
     <div id="cityInto"></div>
@@ -1508,7 +1511,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
   };
   window.addEventListener('error', function (e) { reportProblem('error: ' + e.message + ' @' + e.lineno + ':' + e.colno + ' ' + ((e.error && e.error.stack) || '').slice(0, 400)) });
   window.addEventListener('unhandledrejection', function (e) { var r = e.reason; reportProblem('promise: ' + ((r && (r.stack || r.message)) || r)) });
-  var BUILD = '20261127-085241';
+  var BUILD = '20261127-085512';
   reportProblem('opened build ' + BUILD + ' ' + navigator.userAgent + ' ' + innerWidth + 'x' + innerHeight);
   // The iPad keeps its own saved copy (so the app opens while the Mac sleeps). When the Mac is reachable and has a newer build, reload once to get it.
   function checkForUpdate() {
@@ -2742,7 +2745,8 @@ document.addEventListener('DOMContentLoaded', () => {
      where she came from (`cameFrom`, the default being the city); the rest always lead to the same place. */
   const BACK_TO = { step:'home', brush:'home', grownups:'home', home:'city', shelf:'read', mgame:'games', topit:'games' };
   const cameFrom = {};
-  const backTarget = id => BACK_TO[id] || cameFrom[id] || 'city';
+  let guFrom = null;   // where the grown-ups room was opened from: leaving it goes back there
+  const backTarget = id => (id === 'grownups' && guFrom === 'city') ? 'city' : (BACK_TO[id] || cameFrom[id] || 'city');
   const syncBack = () => { $('#backBtn').hidden = current === 'city' };
   function go(id) {
     if (['read', 'stickers', 'games'].includes(id) && !['read', 'shelf', 'stickers', 'games', 'mgame', 'topit'].includes(current)) cameFrom[id] = current === 'city' || current === 'things' ? current : 'home';
@@ -2875,7 +2879,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function cityLabels(smooth) {
     const world = $('#cityWorld'), chip = $('.city-hud .chip'); if (!world || !chip || !city.built) return;
     const vw = innerWidth, vh = innerHeight, m = 8, cr = chip.getBoundingClientRect(), sc = city.scale;
-    const placed = [];   // labels already put on the screen: one never lies over another (a small window pushes them together)
+    const lk = $('#cityLock'), lr = lk && lk.getBoundingClientRect();
+    const placed = lr && lr.width ? [{ l:lr.left - 6, t:lr.top - 6, r:lr.right + 6, b:lr.bottom + 6 }] : [];   // the lock is already "placed", so labels keep clear of it   // labels already put on the screen: one never lies over another (a small window pushes them together)
     for (const el of [...Object.values(CITY).map(p => p.tagEl), city.badge]) {
       if (!el || el.hidden || !el.offsetWidth) continue;
       const w = el.offsetWidth, h = el.offsetHeight;
@@ -2887,7 +2892,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (l < cr.right + 6 && l + w > cr.left - 6 && t < cr.bottom + 6 && t + h > cr.top - 6) l = Math.min(cr.right + 6, vw - m - w);   // clear of the title pill
         for (let pass = 0; pass < 3; pass++) {
           const hit = placed.find(r => l < r.r + 4 && l + w > r.l - 4 && t < r.b + 4 && t + h > r.t - 4); if (!hit) break;
-          if (hit.r + 4 + w <= vw - m) l = hit.r + 4; else if (hit.l - 4 - w >= m) l = hit.l - 4 - w; else t = Math.min(vh - m - h, hit.b + 4);
+          if (lr && hit === placed[0] && hit.b + 4 + h <= vh - m) t = hit.b + 4;   // under the lock, not beside it
+          else if (hit.r + 4 + w <= vw - m) l = hit.r + 4; else if (hit.l - 4 - w >= m) l = hit.l - 4 - w; else t = Math.min(vh - m - h, hit.b + 4);
         }
         placed.push({ l, t, r:l + w, b:t + h });
       }
@@ -4820,7 +4826,6 @@ document.addEventListener('DOMContentLoaded', () => {
     save();
   }
   /* ---------- grown-ups: a small lock in the corner — press and hold to open ---------- */
-  $('#lockBtn').innerHTML = ICON.lock;
   $('#songBtn').innerHTML = ICON.music; paintSongBtn();
   $('#songBtn').onclick = () => {
     wakeAudio();
@@ -4832,9 +4837,13 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#readPrev').innerHTML = ICON.left; $('#quizBack').innerHTML = ICON.left; $('#quizHear').innerHTML = ICON.sound + '<span>Hear it</span>';
   document.querySelectorAll('#home .hear-dot').forEach(el => el.innerHTML = ICON.sound);
   let lockHold = null;
-  $('#lockBtn').addEventListener('pointerdown', () => { $('#lockBtn').classList.add('holding'); lockHold = setTimeout(() => { $('#lockBtn').classList.remove('holding'); openGrownups() }, 900) });
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => $('#lockBtn').addEventListener(ev, () => { clearTimeout(lockHold); $('#lockBtn').classList.remove('holding') }));
-  $('#lockBtn').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openGrownups() });
+  const wireLock = btn => {   // the one press-and-hold lock, on the house's top bar and on the city map
+    btn.innerHTML = ICON.lock;
+    btn.addEventListener('pointerdown', () => { btn.classList.add('holding'); clearTimeout(lockHold); lockHold = setTimeout(() => { btn.classList.remove('holding'); openGrownups() }, 900) });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => btn.addEventListener(ev, () => { clearTimeout(lockHold); btn.classList.remove('holding') }));
+    btn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openGrownups() });
+  };
+  wireLock($('#lockBtn')); wireLock($('#cityLock'));
 
   /* ---------- grown-ups: copy / paste progress (backup, or moving to a new device or link) ---------- */
   const PROGRESS_TAG = 'UBEUBE1:';
@@ -4875,7 +4884,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (guTitleTaps.length >= 5) { guTitleTaps = []; $('#testingCard').hidden = !$('#testingCard').hidden }
   });
   const openGrownups = then => {
-    afterGate = then || null;
+    afterGate = then || null; if (current !== 'grownups') guFrom = current;
     const a = 6 + Math.floor(Math.random() * 4), b = 6 + Math.floor(Math.random() * 4);
     gateAnswer = a * b; $('#gateQ').textContent = `${a} × ${b}`;
     $('#gateIn').value = ''; $('#gateMsg').textContent = '';
@@ -5545,7 +5554,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="gu-pair">${tbtn('leave')}${tbtn('bed')}</div>
       ${stepper}
       <button class="gu-btn solid" id="suMake" data-act="su-make">${guEsc(suMakeLabel())}</button>
-      <p class="gu-hint" style="text-align:center;margin-top:12px">Starts with a usual morning and evening. To change anything later, press and hold the lock in the corner, then answer a grown-up question.</p>
+      <p class="su-hint">Starts with a usual morning and evening. To change anything later, press and hold the lock in the corner, then answer a grown-up question.</p>
     </div>`;
   }
   function openSetup() {
