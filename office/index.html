@@ -121,7 +121,7 @@ async function openOffice() {
   // Pictures named relatively (img/x.jpg) live in the private repo: hand them to the runtime instead of letting the
   // browser ask the public site for them first (a wasted request each, and a "not found").
   const rel = v => v && !/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(v) && !v.includes('${');   // not a script template
-  const body2 = page.slice(at).replace(/<(img|source|video|image)\b([^>]*?)\s(src|poster|href)\s*=\s*(["'])([^"']*)\4/gi,
+  const body2 = page.slice(at).replace(/<(img|source|video|audio|image)\b([^>]*?)\s(src|poster|href)\s*=\s*(["'])([^"']*)\4/gi,
     (m, tag, pre, attr, q, v) => rel(v) ? `<${tag}${pre} data-office-${attr}=${q}${v}${q}` : m);
   // A page's own scripts and stylesheets beside it (pets.js) are fetched from the repo and put inline, in order.
   let html = page.slice(0, at) + boot + body2;
