@@ -1508,7 +1508,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
   };
   window.addEventListener('error', function (e) { reportProblem('error: ' + e.message + ' @' + e.lineno + ':' + e.colno + ' ' + ((e.error && e.error.stack) || '').slice(0, 400)) });
   window.addEventListener('unhandledrejection', function (e) { var r = e.reason; reportProblem('promise: ' + ((r && (r.stack || r.message)) || r)) });
-  var BUILD = '20261127-084358';
+  var BUILD = '20261127-084723';
   reportProblem('opened build ' + BUILD + ' ' + navigator.userAgent + ' ' + innerWidth + 'x' + innerHeight);
   // The iPad keeps its own saved copy (so the app opens while the Mac sleeps). When the Mac is reachable and has a newer build, reload once to get it.
   function checkForUpdate() {
@@ -5029,7 +5029,6 @@ document.addEventListener('DOMContentLoaded', () => {
   /* --- the home list --- */
   function renderGuHome() {
     const f = family(), key = keyOf(), override = state.settings.overrides[key] || 'auto', nm = childName();
-    const sub = [GU_GRADES.find(g => g[0] === f.child.grade)?.[1], f.leaveTime && 'leaves ' + fmtTime(minutesOf(f.leaveTime)), f.bedtime.school && 'bed ' + fmtTime(minutesOf(f.bedtime.school))].filter(Boolean).join(' · ');
     $('#guHomeBox').innerHTML = `
       <div class="gu-lbl">Today</div>
       <div class="gu-grp pad"><div class="gu-t">Today is…</div>
@@ -5039,7 +5038,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="gu-grp"><button class="gu-row" data-act="open-doing"><span class="gu-face gu-tvface" style="background:#E2F1FA;color:#4f88b2;border-color:#DCEAF5">${ico('chart-line')}</span><span class="t">${guEsc(guDoingTitle())}<small>${guEsc(guWeekLine())}</small></span>${GU_CHEV}</button></div>
       <div class="gu-lbl">${guEsc(nm || 'Your child')}</div>
       <div class="gu-grp">
-        <button class="gu-row" data-act="open-day">${guFace('ube', 'pink')}<span class="t">${guEsc(nm ? nm + '’s day' : 'Your child’s day')}<small>${guEsc(sub || 'name, school days, times')}</small></span>${GU_CHEV}</button>
+        <button class="gu-row" data-act="open-day">${guFace('ube', 'pink')}<span class="t">${guEsc(nm ? 'About ' + nm : 'About your child')}<small>Name, birthday, grade, character, school days, bedtime</small></span>${GU_CHEV}</button>
         <button class="gu-row" data-act="open-routines">${guFace('bunny')}<span class="t">Routines<small>${f.routines.morning.filter(e => stepFrom(e.id, false)).length} morning steps · ${f.routines.evening.filter(e => stepFrom(e.id, false)).length} evening steps</small></span>${GU_CHEV}</button>
         <button class="gu-row" data-act="open-school">${guFace('ube', 'blue')}<span class="t">School week<small>${guEsc(f.specials.map(sp => specialFrom(sp).name).join(', ') || 'No specials yet')}</small></span>${GU_CHEV}</button>
         <button class="gu-row" data-act="open-tv"><span class="gu-face gu-tvface">${ico('tv', { fill:'lilac' })}</span><span class="t">TV time<small>${f.tv.on ? `Earns ${TV_PLACES.map(p => f.tv.earn[p.kind]).join(' · ')} min` : 'Off'}</small></span>${GU_CHEV}</button>
@@ -5204,7 +5203,7 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (wx) wxHtml = `<div class="gu-row"><span class="t">${guEsc(wx.name)}<small>${/^Where this (device|iPad) is$/.test(wx.name) ? 'found once from this device, then saved' : 'saved on this device'}</small></span><button class="act" data-act="town-open">Change</button></div>`;
     else wxHtml = `<button class="gu-row" data-act="geo"><span class="t">Use where this device is<small>${guEsc(guWxMsg || 'asks once, then never again')}</small></span>${GU_CHEV}</button>
       <button class="gu-row" data-act="town-open"><span class="t">Type a town instead</span>${GU_CHEV}</button>`;
-    $('#guDay').innerHTML = guNav(nm || 'Your child’s day') + `
+    $('#guDay').innerHTML = guNav(nm ? 'About ' + nm : 'About your child') + `
       <div class="gu-grp">
         <label class="gu-row"><span class="t">Name</span><input class="gu-vin" id="guName" value="${guEsc(f.child.name)}" maxlength="30" autocomplete="off" placeholder="Name" aria-label="Name"></label>
         <label class="gu-row"><span class="t">Birthday<small>a birthday morning, with balloons</small></span><input class="gu-vin" id="guBday" type="date" value="${bday}" aria-label="Birthday"></label>
