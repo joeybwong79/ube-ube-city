@@ -118,7 +118,21 @@ async function openOffice() {
   const boot = '<script>window.__OFFICE=' + JSON.stringify(info).replace(/</g, '\\u003c') + '<\/script><script>' + store + '<\/script>';
   const head = page.search(/<head(?:\s[^>]*)?>/i), body = page.search(/<body(?:\s[^>]*)?>/i);
   const at = head >= 0 ? head + page.slice(head).indexOf('>') + 1 : body >= 0 ? body + page.slice(body).indexOf('>') + 1 : 0;
-  const html = page.slice(0, at) + boot + page.slice(at);
+  // Pictures named relatively (img/x.jpg) live in the private repo: hand them to the runtime instead of letting the
+  // browser ask the public site for them first (a wasted request each, and a "not found").
+  const rel = v => v && !/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(v) && !v.includes('${');   // not a script template
+  const body2 = page.slice(at).replace(/<(img|source|video|image)\b([^>]*?)\s(src|poster|href)\s*=\s*(["'])([^"']*)\4/gi,
+    (m, tag, pre, attr, q, v) => rel(v) ? `<${tag}${pre} data-office-${attr}=${q}${v}${q}` : m);
+  // A page's own scripts and stylesheets beside it (pets.js) are fetched from the repo and put inline, in order.
+  let html = page.slice(0, at) + boot + body2;
+  const parts = [...html.matchAll(/<script\b([^>]*?)\ssrc\s*=\s*(["'])([^"']+)\2([^>]*)>\s*<\/script>|<link\b[^>]*?\srel\s*=\s*["']?stylesheet["']?[^>]*>/gi)];
+  for (const m of parts.reverse()) {
+    const tag = m[0], href = m[3] || ((tag.match(/\shref\s*=\s*(["'])([^"']+)\1/i) || [])[2]);
+    if (!rel(href)) continue;
+    let text; try { text = await file(info.base + href.replace(/^\.\//, ''), key) } catch (e) { continue }
+    const inline = m[3] ? `<script${m[1]}${m[4]}>${text.replace(/<\/script/gi, '<\\/script')}<\/script>` : `<style>${text.replace(/<\/style/gi, '<\\/style')}</style>`;
+    html = html.slice(0, m.index) + inline + html.slice(m.index + tag.length);
+  }
   document.open(); document.write(html); document.close();
 }
 $('#form').addEventListener('submit', e => { e.preventDefault(); const v = $('#key').value.trim(); if (!v) return; setKey(v); openOffice() });
