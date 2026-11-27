@@ -1053,7 +1053,20 @@ select{flex:1;min-width:0;font:inherit;font-size:16px;padding:11px 10px;border:2
 .gu{font-family:var(--f-ui);color:var(--jb-ink);text-align:left}
 .gu button{font-family:inherit}
 #guHomeBox{margin-bottom:12px}
-.gu-nav{display:flex;align-items:center;gap:12px;padding:2px 0 14px;min-height:64px}
+.gu-nav{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;background:#e6d9f6;margin-top:calc(-14px - env(safe-area-inset-top));padding:calc(18px + env(safe-area-inset-top)) 0 14px;min-height:64px}
+#grownups.gu-scrolled .gu-nav{box-shadow:0 6px 12px -8px rgba(59,49,64,.18)}
+.gu-wx{display:flex;gap:8px}
+.gu-wx .gu-in{flex:1;min-width:0;width:auto}
+.gu-loc{flex:none;width:52px;height:52px;padding:0;border-radius:50%;background:#fff;border:2px solid var(--jb-line-v);color:var(--jb-violet-deep);display:grid;place-items:center}
+.gu-loc svg{width:24px;height:24px}
+.gu-loc:active:not(:disabled){background:var(--jb-violet-tint)}
+.gu-loc.wait svg{animation:guPulse 1s ease-in-out infinite alternate}
+@keyframes guPulse{from{opacity:1}to{opacity:.4}}
+.gu-wxnote{font-size:13px;color:var(--jb-muted);margin:6px 6px 0}
+.gu-wxnote:empty{display:none}
+#guTownList{margin-top:6px}
+#guTownList:empty{display:none}
+#guTownList button.gu-row:active{background:var(--jb-violet-tint)}
 .gu-backroom{width:60px;height:60px;flex:none}  /* room for the one back button (.round-back) */
 .gu-nav h1{flex:1;margin:0;text-align:center;text-wrap:balance;overflow-wrap:anywhere;font:700 22px/1.1 var(--f-display);color:var(--jb-ink)}
 .gu-nav .gu-act{border:0;background:none;color:var(--jb-violet-deep);font-weight:700;font-size:17px;min-width:60px;min-height:44px;text-align:right;padding:0}
@@ -1511,7 +1524,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
   };
   window.addEventListener('error', function (e) { reportProblem('error: ' + e.message + ' @' + e.lineno + ':' + e.colno + ' ' + ((e.error && e.error.stack) || '').slice(0, 400)) });
   window.addEventListener('unhandledrejection', function (e) { var r = e.reason; reportProblem('promise: ' + ((r && (r.stack || r.message)) || r)) });
-  var BUILD = '20261127-085709';
+  var BUILD = '20261127-085914';
   reportProblem('opened build ' + BUILD + ' ' + navigator.userAgent + ' ' + innerWidth + 'x' + innerHeight);
   // The iPad keeps its own saved copy (so the app opens while the Mac sleeps). When the Mac is reachable and has a newer build, reload once to get it.
   function checkForUpdate() {
@@ -1869,6 +1882,7 @@ document.addEventListener('DOMContentLoaded', () => {
     check: svgIcon('<path d="M20 6 9 17l-5-5"/>', 3),
     left: svgIcon('<path d="m15 18-6-6 6-6"/>', 2.5),
     right: svgIcon('<path d="m9 18 6-6-6-6"/>', 2.75),
+    locate: svgIcon('<line x1="2" x2="5" y1="12" y2="12"/><line x1="19" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="5"/><line x1="12" x2="12" y1="19" y2="22"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/>', 2),
     music: svgIcon('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>')
   };
   const $ = sel => document.querySelector(sel);
@@ -5021,7 +5035,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tickle:'A tickle massage with a soft night song. Opens when the tasks above it are done.'
   }[step.id] || '');
 
-  let guView = 'home', guTab = 'morning', guOpenRow = null, guTownOpen = false, guWxMsg = '', guSheetFor = null, guOwnDraft = null, guUndoSnap = null, guToastTimer = 0, guDragEndAt = 0, guClearTimer = 0;
+  let guView = 'home', guTab = 'morning', guOpenRow = null, guWxMsg = '', guSheetFor = null, guOwnDraft = null, guUndoSnap = null, guToastTimer = 0, guDragEndAt = 0, guClearTimer = 0;
 
   function guShow(view) {
     guView = view; guCloseSheet(); guOpenRow = null; guClearDisarm();
@@ -5033,7 +5047,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function guRender() {
     if (guView === 'home') renderGuHome(); else if (guView === 'day') renderGuDay(); else if (guView === 'routines') renderGuRoutines(); else if (guView === 'school') renderGuSchool(); else if (guView === 'rewards') renderGuRewards(); else if (guView === 'tv') renderGuTv(); else if (guView === 'doing') renderGuDoing(); else if (guView === 'ipad') renderGuIpad(); else renderGuOwn();
   }
-  const guReset = () => { guClearDisarm(); guView = 'home'; guTab = 'morning'; guTownOpen = false; guWxMsg = ''; guCloseSheet(); guHideToast(); $('#grownups').classList.remove('gu-sub', 'gu-wide'); document.querySelectorAll('.gu-view').forEach(v => v.classList.remove('cur')) };
+  $('#grownups').addEventListener('scroll', () => $('#grownups').classList.toggle('gu-scrolled', $('#grownups').scrollTop > 2), { passive:true });
+  const guReset = () => { guTownSeq++; clearTimeout(guTownTimer); guTownHits = []; $('#grownups').classList.remove('gu-scrolled'); guClearDisarm(); guView = 'home'; guTab = 'morning'; guWxMsg = ''; guCloseSheet(); guHideToast(); $('#grownups').classList.remove('gu-sub', 'gu-wide'); document.querySelectorAll('.gu-view').forEach(v => v.classList.remove('cur')) };
 
   /* --- the home list --- */
   function renderGuHome() {
@@ -5206,12 +5221,9 @@ document.addEventListener('DOMContentLoaded', () => {
         (open ? `<div class="gu-row gu-steprow"><span class="gu-step"><button data-act="tstep" data-k="${k}" data-dir="-1" aria-label="5 minutes earlier">−</button><b>${shown}</b><button data-act="tstep" data-k="${k}" data-dir="1" aria-label="5 minutes later">+</button></span></div>` : '');
     };
     const wx = f.weather;
-    let wxHtml;
-    if (guTownOpen) wxHtml = `<div class="gu-row"><input class="gu-in" id="guTown" placeholder="Town or city" autocomplete="off" style="flex:1;min-height:48px"><button class="act" data-act="town-go">Set</button></div>
-      <div class="gu-row" style="min-height:0;padding:6px 14px"><span class="t" id="guTownMsg" aria-live="polite" style="font-weight:400;font-size:13px;color:var(--jb-muted)">${guEsc(guWxMsg || 'Type the nearest town or city.')}</span>${wx ? '<button class="act" data-act="town-cancel">Cancel</button>' : ''}</div>`;
-    else if (wx) wxHtml = `<div class="gu-row"><span class="t">${guEsc(wx.name)}<small>${/^Where this (device|iPad) is$/.test(wx.name) ? 'found once from this device, then saved' : 'saved on this device'}</small></span><button class="act" data-act="town-open">Change</button></div>`;
-    else wxHtml = `<button class="gu-row" data-act="geo"><span class="t">Use where this device is<small>${guEsc(guWxMsg || 'asks once, then never again')}</small></span>${GU_CHEV}</button>
-      <button class="gu-row" data-act="town-open"><span class="t">Type a town instead</span>${GU_CHEV}</button>`;
+    const wxNote = guWxMsg || (wx ? (/^Where this (device|iPad) is$/.test(wx.name) ? 'found once from this device, then saved' : 'saved on this device') : '');
+    const wxHtml = `<div class="gu-wx"><input class="gu-in" id="guTown" placeholder="Town or city" autocomplete="off" autocapitalize="words" aria-label="Town or city" value="${guEsc(wx ? wx.name : '')}"><button class="gu-loc" id="guLoc" data-act="geo" aria-label="Use where this device is">${ICON.locate}</button></div>
+      <div class="gu-wxnote" id="guTownMsg" aria-live="polite">${guEsc(wxNote)}</div><div id="guTownList"></div>`;
     $('#guDay').innerHTML = guNav(nm ? 'About ' + nm : 'About your child') + `
       <div class="gu-grp">
         <label class="gu-row"><span class="t">Name</span><input class="gu-vin" id="guName" value="${guEsc(f.child.name)}" maxlength="30" autocomplete="off" placeholder="Name" aria-label="Name"></label>
@@ -5229,7 +5241,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="gu-lbl">Brushing teeth</div>
       <div class="gu-grp"><div class="gu-row"><div class="gu-seg" style="flex:1"><button data-act="brush" data-sec="60" class="${f.brushSeconds === 60 ? 'on' : ''}">1 minute</button><button data-act="brush" data-sec="120" class="${f.brushSeconds === 120 ? 'on' : ''}">2 minutes</button></div></div></div>
       <div class="gu-lbl">Weather for “Get dressed”</div>
-      <div class="gu-grp">${wxHtml}</div>`;
+      ${wxHtml}`;
   }
   function guStepTime(k, dir, table = GU_TIMES) {
     const c = table[k], cur = c.get();
@@ -5238,31 +5250,77 @@ document.addEventListener('DOMContentLoaded', () => {
     else { m = Math.round(minutesOf(cur) / 5) * 5 + dir * 5; if (m > c.max) { if (c.none) { c.set(null); return } m = c.max } if (m < c.min) m = c.min }
     c.set(guHHMM(m));
   }
-  // The town box's lookup, shared with the older Weather card: finds the place by name (Open-Meteo) and saves it. say() shows messages; resolves true when saved.
-  async function lookupTown(name, say) {
-    if (!name) { say('Type a town or city first.'); return false }
-    say('Looking it up…');
-    try {
-      const reply = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=en`);
-      const place = (await reply.json()).results?.[0];
-      if (!place) { say(`Couldn’t find “${name}”. Try the nearest big city.`); return false }
-      family().weather = { name:[place.name, place.admin1].filter(Boolean).join(', '), lat:place.latitude, lon:place.longitude };
-      state.weather = null; save(); say('{check}Saved.');
-      return true;
-    } catch {
-      say('Couldn’t reach the weather service from here (the claude.ai test link blocks it). It will work in the app file or on its own website.');
-      return false;
+  // The town box: suggestions as she types (Open-Meteo geocoding; only the typed text is sent), and "use where this device is".
+  let guTownHits = [], guTownSeq = 0, guTownTimer = 0;
+  const guTownNote = t => { const n = $('#guTownMsg'); if (n) n.textContent = t || '' };
+  const guTownLabel = r => [r.name, r.country].filter(Boolean).join(', ');
+  async function guGeoFetch(name, count) {
+    const reply = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=${count}&language=en`);
+    return (await reply.json()).results || [];
+  }
+  // "Sydney Australia" and "Sydney, Australia" both find Sydney: the whole text first, then the town part with the country as a filter.
+  async function guTownSearch(text) {
+    const t = text.trim().replace(/\s+/g, ' '), norm = x => x.toLowerCase().replace(/[.,]/g, '').trim();
+    const byCountry = (rows, want) => { const w = norm(want); return rows.filter(r => w && (norm(r.country || '') === w || (r.country_code || '').toLowerCase() === w || norm(r.country || '').startsWith(w))) };
+    if (t.includes(',')) {
+      const i = t.indexOf(','), head = t.slice(0, i).trim(), rest = t.slice(i + 1);
+      if (head.length < 2) return [];
+      return byCountry(await guGeoFetch(head, 20), rest).slice(0, 5);
     }
+    let rows = await guGeoFetch(t, 5);
+    if (rows.length) return rows.slice(0, 5);
+    const words = t.split(' ');
+    for (let k = 1; k <= 2 && words.length > k; k++) {
+      const head = words.slice(0, -k).join(' '), rest = words.slice(-k).join(' ');
+      if (head.length < 2) continue;
+      rows = byCountry(await guGeoFetch(head, 20), rest);
+      if (rows.length) return rows.slice(0, 5);
+    }
+    return [];
+  }
+  function guTownDraw(rows) {
+    guTownHits = rows;
+    const box = $('#guTownList'); if (!box) return;
+    box.innerHTML = rows.length
+      ? `<div class="gu-grp">${rows.map((r, i) => `<button class="gu-row" data-act="pick-town" data-i="${i}"><span class="t">${guEsc(r.name)}<small>${guEsc([r.admin1, r.country].filter(Boolean).join(', '))}</small></span></button>`).join('')}</div>`
+      : `<div class="gu-grp"><div class="gu-row"><span class="t" style="color:var(--jb-muted);font-weight:400">No town by that name. Try the town on its own.</span></div></div>`;
+  }
+  function guTownType() {
+    clearTimeout(guTownTimer);
+    const inp = $('#guTown'); if (!inp) return;
+    const text = inp.value.trim();
+    if (text.length < 2) { guTownSeq++; guTownDraw([]); const box = $('#guTownList'); if (box) box.innerHTML = ''; return }
+    guTownTimer = setTimeout(async () => {
+      const mine = ++guTownSeq;
+      try {
+        const rows = await guTownSearch(text);
+        if (mine !== guTownSeq || !$('#guTown')) return;
+        guTownNote(''); guTownDraw(rows);
+      } catch {
+        if (mine === guTownSeq) guTownNote('Couldn’t reach the weather service from here (the claude.ai test link blocks it). It will work in the app file or on its own website.');
+      }
+    }, 250);
+  }
+  function guTownPick(r) {
+    if (!r) return;
+    guTownSeq++; clearTimeout(guTownTimer);
+    family().weather = { name:[r.name, r.admin1].filter(Boolean).join(', '), lat:r.latitude, lon:r.longitude };
+    state.weather = null; save();
+    const inp = $('#guTown'); if (inp) { inp.value = guTownLabel(r); inp.blur() }
+    guTownHits = []; const box = $('#guTownList'); if (box) box.innerHTML = '';
+    guTownNote('saved on this device');
   }
   // Where this device is: asked ONCE, on the tap. Two decimals kept, the town is saved, nothing watches the position and nothing else sends it anywhere.
   function guGeo() {
-    const refused = msg => { guTownOpen = true; guWxMsg = msg; renderGuDay() };
-    if (!navigator.geolocation) { refused('This device can’t say where it is. Type a town instead.'); return }
-    guWxMsg = 'Finding where this device is…'; renderGuDay();
+    const btn = $('#guLoc'), wait = on => { if (btn) { btn.disabled = on; btn.classList.toggle('wait', on) } };
+    const failed = () => { wait(false); if (guView === 'day') guTownNote('Couldn’t find where this device is. Type the town instead.') };
+    if (!navigator.geolocation) { failed(); return }
+    guTownNote(''); wait(true);
     navigator.geolocation.getCurrentPosition(p => {
       family().weather = { name:'Where this device is', lat:+p.coords.latitude.toFixed(2), lon:+p.coords.longitude.toFixed(2) };
-      state.weather = null; save(); guTownOpen = false; guWxMsg = ''; if (guView === 'day') renderGuDay();
-    }, () => { if (guView === 'day') refused('Location is off, so type a town instead.') }, { timeout:20000, maximumAge:600000 });
+      state.weather = null; save(); wait(false);
+      if (guView === 'day') { guTownSeq++; const inp = $('#guTown'); if (inp) inp.value = family().weather.name; const box = $('#guTownList'); if (box) box.innerHTML = ''; guTownNote('found once from this device, then saved') }
+    }, failed, { timeout:20000, maximumAge:600000 });
   }
 
   /* --- routines --- */
@@ -5414,7 +5472,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const entry = () => guSheetFor && f.routines[guSheetFor.r].find(x => x.id === guSheetFor.id);
     switch (a) {
       case 'back': guShow(guView === 'own' ? 'routines' : 'home'); break;
-      case 'open-day': guTownOpen = false; guWxMsg = ''; guShow('day'); break;
+      case 'open-day': guWxMsg = ''; guShow('day'); break;
       case 'open-routines': guShow('routines'); break;
       case 'open-school': guShow('school'); break;
       case 'open-rewards': guShow('rewards'); break;
@@ -5463,9 +5521,7 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'walker': { const w = v === 'boy' ? 'boy' : 'girl'; if (w !== f.child.walker) guCommit('Changed who walks the city', () => { f.child.walker = w }); applyWalker(); break }
       case 'brush': f.brushSeconds = +el.dataset.sec; save(); renderGuDay(); break;
       case 'geo': guGeo(); break;
-      case 'town-open': guTownOpen = true; guWxMsg = ''; renderGuDay(); $('#guTown')?.focus(); break;
-      case 'town-cancel': guTownOpen = false; guWxMsg = ''; renderGuDay(); break;
-      case 'town-go': lookupTown($('#guTown').value.trim(), m => { const t = $('#guTownMsg'); if (t) t.textContent = m }).then(ok => { if (ok) { guTownOpen = false; guWxMsg = ''; if (guView === 'day') renderGuDay() } }); break;
+      case 'pick-town': guTownPick(guTownHits[+el.dataset.i]); break;
       case 'tab': guTab = el.dataset.r; renderGuRoutines(); break;
       case 'own-open': guOwnDraft = { name:'', host:'ube', when:el.dataset.r || guTab, days:'every', kind:'task' }; guShow('own'); break;
       case 'chip': { const id = el.dataset.id, r = el.dataset.r; guCommit(`Added ${STEP_LIBRARY[id].label}`, () => f.routines[r].push({ id, days:'every' })); break }
@@ -5498,10 +5554,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const card = e.target.closest('.gu-card');
     if (card && Date.now() - guDragEndAt > 400) guOpenSheet(card);
   }));
-  guRoot.addEventListener('keydown', e => { const card = e.target.closest && e.target.closest('.gu-card'); if (card && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); guOpenSheet(card) } });
+  guRoot.addEventListener('keydown', e => { if (e.target.id === 'guTown' && e.key === 'Enter') { e.preventDefault(); guTownPick(guTownHits[0]); return } const card = e.target.closest && e.target.closest('.gu-card'); if (card && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); guOpenSheet(card) } });
   guRoot.addEventListener('input', e => {
     const f = family();
     if (e.target.id === 'guName') { f.child.name = e.target.value.slice(0, 30); save(); applyChildName() }
+    else if (e.target.id === 'guTown') guTownType();
     else if (e.target.id === 'guOwnName') { guOwnDraft.name = e.target.value; const b = $('#guOwnAdd'); if (b) b.disabled = !e.target.value.trim() }
   });
   guRoot.addEventListener('change', e => {
