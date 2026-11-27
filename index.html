@@ -1220,6 +1220,10 @@ button.gu-switch:before{content:"";position:absolute;inset:-8px -4px}
 #guSetup{position:absolute;inset:0;z-index:80;background:var(--jb-ivory);overflow-y:auto;overscroll-behavior:contain}
 #guSetup[hidden]{display:none}
 .gu-setup{max-width:520px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom))}
+.gu-num{width:34px;height:34px;flex:none;border-radius:50%;background:var(--jb-violet-tint);color:var(--jb-violet-deep);font:800 17px/34px var(--f-display);text-align:center}
+.gu-safico{width:40px;height:40px;flex:none;border-radius:10px;background:#fff;border:2px solid var(--jb-line-v);display:grid;place-items:center;color:#007AFF}
+.gu-safico svg{width:22px;height:22px}
+.gu-later{display:block;margin:6px auto 0;border:0;background:none;color:var(--jb-violet-deep);font-weight:700;font-size:17px;min-height:48px;min-width:120px}
 .gu-skip{display:flex;justify-content:flex-end}
 .gu-skip button{border:0;background:none;color:var(--jb-violet-deep);font-weight:700;font-size:17px;min-height:48px;min-width:60px;padding:0 4px}
 .gu-hi{display:flex;align-items:flex-end;gap:12px;margin:4px 0 6px}
@@ -1480,6 +1484,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
       <div class="gu gu-view" id="guTv"></div>
       <div class="gu gu-view" id="guDoing"></div>
       <div class="gu gu-view" id="guIpad"></div>
+      <div class="gu gu-view" id="guHomescreen"></div>
       <div class="card" id="testingCard" hidden>
         <h2>Testing</h2>
         <p class="hint" style="margin-top:0">Preview a weekday (school specials, Friday Spanish, weekend steps):</p>
@@ -1527,7 +1532,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
   };
   window.addEventListener('error', function (e) { reportProblem('error: ' + e.message + ' @' + e.lineno + ':' + e.colno + ' ' + ((e.error && e.error.stack) || '').slice(0, 400)) });
   window.addEventListener('unhandledrejection', function (e) { var r = e.reason; reportProblem('promise: ' + ((r && (r.stack || r.message)) || r)) });
-  var BUILD = '20261127-111556';
+  var BUILD = '20261127-112650';
   reportProblem('opened build ' + BUILD + ' ' + navigator.userAgent + ' ' + innerWidth + 'x' + innerHeight);
   // The iPad keeps its own saved copy (so the app opens while the Mac sleeps). When the Mac is reachable and has a newer build, reload once to get it.
   function checkForUpdate() {
@@ -1945,6 +1950,10 @@ document.addEventListener('DOMContentLoaded', () => {
     ticket: ['<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>', '<path d="M13 5v2"/>', '<path d="M13 17v2"/>', '<path d="M13 11v2"/>'],
     image: ['<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>', '<circle cx="9" cy="9" r="2"/>', '<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>'],
     'chart-line': ['<path d="M3 3v16a2 2 0 0 0 2 2h16"/>', '<path d="m19 9-5 5-4-4-3 3"/>'],
+    share: ['<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>', '<polyline points="16 6 12 2 8 6"/>', '<line x1="12" x2="12" y1="2" y2="15"/>'],
+    'square-plus': ['<rect width="18" height="18" x="3" y="3" rx="2"/>', '<path d="M8 12h8"/>', '<path d="M12 8v8"/>'],
+    download: ['<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>', '<polyline points="7 10 12 15 17 10"/>', '<line x1="12" x2="12" y1="15" y2="3"/>'],
+    upload: ['<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>', '<polyline points="17 8 12 3 7 8"/>', '<line x1="12" x2="12" y1="3" y2="15"/>'],
     tablet: ['<rect width="16" height="20" x="4" y="2" rx="2" ry="2"/>', '<line x1="12" x2="12.01" y1="18" y2="18"/>'],
     copy: ['<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>', '<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>'],
     clipboard: ['<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>', '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>'],
@@ -5049,20 +5058,20 @@ document.addEventListener('DOMContentLoaded', () => {
     tickle:'A tickle massage with a soft night song. Opens when the tasks above it are done.'
   }[step.id] || '');
 
-  let guView = 'home', guTab = 'morning', guOpenRow = null, guWxMsg = '', guSheetFor = null, guOwnDraft = null, guUndoSnap = null, guToastTimer = 0, guDragEndAt = 0, guClearTimer = 0;
+  let guLoadPending = null, guView = 'home', guTab = 'morning', guOpenRow = null, guWxMsg = '', guSheetFor = null, guOwnDraft = null, guUndoSnap = null, guToastTimer = 0, guDragEndAt = 0, guClearTimer = 0;
 
   function guShow(view) {
-    guView = view; guCloseSheet(); guOpenRow = null; guClearDisarm();
+    guView = view; guCloseSheet(); guOpenRow = null; guClearDisarm(); guLoadPending = null;
     const g = $('#grownups');
     g.classList.toggle('gu-sub', view !== 'home'); g.classList.toggle('gu-wide', view === 'routines' || view === 'school');
-    ['day', 'routines', 'own', 'school', 'rewards', 'tv', 'doing', 'ipad'].forEach(n => $('#gu' + n[0].toUpperCase() + n.slice(1)).classList.toggle('cur', view === n));
+    ['day', 'routines', 'own', 'school', 'rewards', 'tv', 'doing', 'ipad', 'homescreen'].forEach(n => $('#gu' + n[0].toUpperCase() + n.slice(1)).classList.toggle('cur', view === n));
     guRender(); g.scrollTop = 0;
   }
   function guRender() {
-    if (guView === 'home') renderGuHome(); else if (guView === 'day') renderGuDay(); else if (guView === 'routines') renderGuRoutines(); else if (guView === 'school') renderGuSchool(); else if (guView === 'rewards') renderGuRewards(); else if (guView === 'tv') renderGuTv(); else if (guView === 'doing') renderGuDoing(); else if (guView === 'ipad') renderGuIpad(); else renderGuOwn();
+    if (guView === 'home') renderGuHome(); else if (guView === 'day') renderGuDay(); else if (guView === 'routines') renderGuRoutines(); else if (guView === 'school') renderGuSchool(); else if (guView === 'rewards') renderGuRewards(); else if (guView === 'tv') renderGuTv(); else if (guView === 'doing') renderGuDoing(); else if (guView === 'ipad') renderGuIpad(); else if (guView === 'homescreen') renderGuHomeScreen(); else renderGuOwn();
   }
   $('#grownups').addEventListener('scroll', () => $('#grownups').classList.toggle('gu-scrolled', $('#grownups').scrollTop > 2), { passive:true });
-  const guReset = () => { guTownSeq++; clearTimeout(guTownTimer); guTownHits = []; $('#grownups').classList.remove('gu-scrolled'); guClearDisarm(); guView = 'home'; guTab = 'morning'; guWxMsg = ''; guCloseSheet(); guHideToast(); $('#grownups').classList.remove('gu-sub', 'gu-wide'); document.querySelectorAll('.gu-view').forEach(v => v.classList.remove('cur')) };
+  const guReset = () => { guTownSeq++; clearTimeout(guTownTimer); guTownHits = []; $('#grownups').classList.remove('gu-scrolled'); guClearDisarm(); guView = 'home'; guTab = 'morning'; guWxMsg = ''; guLoadPending = null; guCloseSheet(); guHideToast(); $('#grownups').classList.remove('gu-sub', 'gu-wide'); document.querySelectorAll('.gu-view').forEach(v => v.classList.remove('cur')) };
 
   /* --- the home list --- */
   function renderGuHome() {
@@ -5083,7 +5092,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <button class="gu-row" data-act="open-rewards">${guFace('bird', 'pink')}<span class="t">Languages and stickers<small>${guEsc(guLangNames() || 'No languages')}</small></span>${GU_CHEV}</button>
       </div>
       <div class="gu-lbl">This device</div>
-      <div class="gu-grp"><button class="gu-row" data-act="open-ipad"><span class="gu-face gu-tvface" style="background:#F4EFF8;color:var(--jb-soft)">${ico('tablet')}</span><span class="t">Save, move or start over<small>Progress on this device</small></span>${GU_CHEV}</button></div>`;
+      <div class="gu-grp">${isStandalone() ? '' : `<button class="gu-row" data-act="open-homescreen"><span class="gu-face gu-tvface" style="background:#F4EFF8;color:var(--jb-soft)">${ico('square-plus')}</span><span class="t">Add to the Home Screen<small>Keeps progress safe on this device</small></span>${GU_CHEV}</button>`}<button class="gu-row" data-act="open-ipad"><span class="gu-face gu-tvface" style="background:#F4EFF8;color:var(--jb-soft)">${ico('tablet')}</span><span class="t">Save, move or start over<small>Progress on this device</small></span>${GU_CHEV}</button></div>`;
     $('#typeSeg').querySelectorAll('button').forEach(b => {
       b.setAttribute('aria-pressed', b.dataset.type === override);
       b.onclick = () => { if (b.dataset.type === 'auto') delete state.settings.overrides[key]; else state.settings.overrides[key] = b.dataset.type; save(); renderGuHome() };
@@ -5164,12 +5173,65 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="gu-lbl">Words learned</div>${words}
       <p class="gu-hint">Nothing to set here: this page only shows how it is going.</p>`;
   }
+  const isStandalone = () => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true } catch { return false } };
+  const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isIPad = () => !/iPhone|iPod/.test(navigator.userAgent);
+  /* The Home Screen steps (design sheet mockups/home-screen/SHEET.md): the card at the end of setup and the grown-ups page share them. */
+  const homeScreenSteps = () => isIOS()
+    ? `<div class="gu-grp">
+        <div class="gu-row"><span class="gu-num">1</span><span class="t">Tap the Share button<small>${isIPad() ? 'iPad: at the top right.' : 'iPhone: at the bottom of Safari. If you don’t see it, tap the three dots first.'}</small></span><span class="gu-safico">${ico('share')}</span></div>
+        <div class="gu-row"><span class="gu-num">2</span><span class="t">Choose “Add to Home Screen”<small>Scroll down the list if you don’t see it.</small></span><span class="gu-safico">${ico('square-plus')}</span></div>
+        <div class="gu-row"><span class="gu-num">3</span><span class="t">Tap “Add”<small>Then open Ube Ube City from its new icon.</small></span></div>
+      </div>`
+    : `<div class="gu-grp pad"><p class="gu-hint" style="font-size:15px;margin:0">On Android, in Chrome: open the menu (top right), then “Add to Home screen” or “Install app”. On a computer, it works in the browser as it is.</p></div>`;
+  const homeScreenWhy = () => `<p class="su-hint" style="text-align:left;font-size:15px;color:var(--jb-ink);font-weight:600;margin:0 0 14px">Safari can clear what a website saved if it isn’t opened for a week. From the Home Screen, the day, the jar and the stickers stay safe, and it opens full screen.</p>`;
+  function renderGuHomeScreen() { $('#guHomescreen').innerHTML = guNav('Home Screen') + homeScreenWhy() + homeScreenSteps() }
+  const guLoadRowHtml = () => `<button class="gu-row" id="guLoadRow" data-act="file-load"><span class="gu-face gu-tvface" style="background:#F4EFF8;color:var(--jb-soft)">${ico('upload')}</span><span class="t">Load a copy<small>Replaces everything on this device with a saved file.</small></span></button>`;
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const guFileDate = iso => { const d = new Date(iso); if (!iso || isNaN(d)) return ''; return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() < 12 ? 'am' : 'pm'}` };
+  /* Save a copy / Load a copy: one file with everything this device keeps (every key but the office page's own). */
+  function progressSaveFile() {
+    save();
+    const keys = {}; try { Object.keys(localStorage).forEach(k => { if (!k.startsWith('office:')) keys[k] = localStorage.getItem(k) }) } catch {}
+    const now = new Date(), pad = n => String(n).padStart(2, '0');
+    const blob = new Blob([JSON.stringify({ app:'ube-ube-city', version:1, savedAt:now.toISOString(), keys })], { type:'application/json' });
+    const url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = `ube-ube-city-progress-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    $('#progressMsg').textContent = 'Saved. Look for it in Downloads (on an iPhone or iPad: the Files app).';
+  }
+  function progressPickedFile(file) {
+    const bad = () => { guLoadPending = null; $('#progressMsg').textContent = 'That file isn’t an Ube Ube City copy. Nothing was changed.' };
+    if (!file) return;
+    file.text().then(txt => {
+      let o = null; try { o = JSON.parse(txt) } catch {}
+      if (!o || o.app !== 'ube-ube-city' || !o.keys || typeof o.keys !== 'object' || Array.isArray(o.keys) || typeof o.keys[STORE] !== 'string') return bad();
+      guLoadPending = o; $('#progressMsg').textContent = '';
+      const when = guFileDate(o.savedAt), row = $('#guLoadRow') || $('#guLoadConfirm');
+      row.outerHTML = `<div class="gu-row" id="guLoadConfirm"><span class="t">${when ? `Load the copy from ${guEsc(when)}?` : 'Load this copy?'}<small>What is on this device now is replaced. This cannot be undone.</small></span><button class="gu-sbtn inrow" data-act="file-cancel">Cancel</button><button class="gu-sbtn inrow danger sure" data-act="file-sure">Load it</button></div>`;
+    }, bad);
+  }
+  function progressLoadFile() {
+    const o = guLoadPending; if (!o) return;
+    wiping = true; clearTimeout(syncTimer);
+    try { Object.keys(localStorage).forEach(k => { if (!k.startsWith('office:')) localStorage.removeItem(k) }) } catch {}
+    try { Object.keys(o.keys).forEach(k => { if (typeof o.keys[k] === 'string' && !k.startsWith('office:')) localStorage.setItem(k, o.keys[k]) }) } catch {}
+    location.reload();
+  }
+  document.addEventListener('change', e => { if (e.target.id === 'guLoadFile') { progressPickedFile(e.target.files[0]); e.target.value = '' } });
   function renderGuIpad() {
     $('#guIpad').innerHTML = guNav('This device') + `<div class="gu-lbl">Save or move progress</div>
-      <div class="gu-grp pad"><p class="gu-hint" style="margin:0 2px 10px">Copy the stickers, days, stories and games as text, to keep a backup or to move them to another phone, tablet or computer.</p>
+      <div class="gu-grp">
+        <button class="gu-row" data-act="file-save"><span class="gu-face gu-tvface" style="background:#F4EFF8;color:var(--jb-soft)">${ico('download')}</span><span class="t">Save a copy<small>Downloads a file of the setup, the jar, the stickers and the games. Keep it in Files, or send it to yourself.</small></span></button>
+        ${guLoadRowHtml()}
+        <button class="gu-row" data-act="move-text" aria-expanded="false"><span class="t">Move as text instead<small>For when a file won’t go across</small></span>${GU_CHEV}</button>
+      </div>
+      <input type="file" id="guLoadFile" accept=".json,application/json" hidden>
+      <p class="gu-hint" id="progressMsg" aria-live="polite" style="font-weight:600"></p>
+      <div id="guMoveText" hidden><div class="gu-grp pad"><p class="gu-hint" style="margin:0 2px 10px">Copy the stickers, days, stories and games as text, to keep a backup or to move them to another phone, tablet or computer.</p>
         <div class="gu-btnrow"><button class="gu-sbtn" id="progressCopy" data-act="prog-copy">${ico('copy')} Copy progress</button><button class="gu-sbtn" id="progressPaste" data-act="prog-paste">${ico('clipboard')} Paste progress</button></div>
-        <textarea class="gu-ta" id="progressText" rows="3" spellcheck="false" autocapitalize="off" placeholder="Progress text appears here, or paste it here" aria-label="Progress text"></textarea>
-        <p class="gu-hint" id="progressMsg" aria-live="polite" style="font-weight:600"></p></div>
+        <textarea class="gu-ta" id="progressText" rows="3" spellcheck="false" autocapitalize="off" placeholder="Progress text appears here, or paste it here" aria-label="Progress text"></textarea></div></div>
       <div class="gu-lbl">Start over</div>
       <div class="gu-grp">
         <div class="gu-row"><span class="t">Start today over<small>Clears today’s stars, story and today’s stickers, so every step can be done again.</small></span><button class="gu-sbtn inrow" id="resetToday" data-act="reset-today">${ico('rotate-ccw')} Start over</button></div>
@@ -5495,6 +5557,12 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'open-tv': guShow('tv'); break;
       case 'open-doing': guShow('doing'); break;
       case 'open-ipad': guShow('ipad'); break;
+      case 'open-homescreen': guShow('homescreen'); break;
+      case 'file-save': progressSaveFile(); break;
+      case 'file-load': $('#guLoadFile').click(); break;
+      case 'file-cancel': guLoadPending = null; $('#guLoadConfirm').outerHTML = guLoadRowHtml(); break;
+      case 'file-sure': progressLoadFile(); break;
+      case 'move-text': { const open = $('#guMoveText').hidden; $('#guMoveText').hidden = !open; el.setAttribute('aria-expanded', open); const c = el.querySelector('.chev'); if (c) c.style.transform = open ? 'rotate(90deg)' : ''; break }
       case 'prog-copy': progressCopy(); break;
       case 'prog-paste': progressPaste(el); break;
       case 'reset-today': resetToday(); break;
@@ -5593,7 +5661,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* --- first-time setup: shown once over the city on a device with nothing saved (family.setupDone === false) ---
      Make the day saves the answers; Skip saves nothing but the flag. Either way it never shows again. Every field may stay empty. */
-  let suDraft = null, suOpen = null;
+  let suDraft = null, suOpen = null, suStage = 'form';
   const suTimes = {
     leave: { ...GU_TIMES.leave, get:() => suDraft.leaveTime, set:v => { suDraft.leaveTime = v } },
     bed:   { ...GU_TIMES.bedSchool, label:'Bedtime', get:() => suDraft.bed, set:v => { suDraft.bed = v } }
@@ -5611,6 +5679,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const tbtn = k => { const c = suTimes[k], cur = c.get(); return `<div class="gu-field"><span class="gl">${c.label}</span><button class="gu-in" data-act="su-time" data-k="${k}" aria-expanded="${suOpen === k}">${cur ? guClock(cur) : 'Not set'}</button></div>` };
     const stepper = suOpen ? (() => { const c = suTimes[suOpen], cur = c.get(), shown = cur ? guClock(cur) : (c.none || 'Not set');
       return `<div class="gu-grp" style="margin-bottom:14px"><div class="gu-row gu-steprow"><span class="gu-step"><button data-act="su-step" data-k="${suOpen}" data-dir="-1" aria-label="5 minutes earlier">−</button><b>${shown}</b><button data-act="su-step" data-k="${suOpen}" data-dir="1" aria-label="5 minutes later">+</button></span></div></div>` })() : '';
+    if (suStage === 'home') {
+      $('#guSetup').innerHTML = `<div class="gu-setup">
+      <div class="gu-hi"><img src="${artSrc('ube-cheer')}" alt="Ube Ube waving"><div>One last thing, for the grown-up.</div></div>
+      <h1 class="gu-big">Keep it on the Home Screen</h1>
+      ${homeScreenWhy()}${homeScreenSteps()}
+      <p class="gu-hint">You can find this again in the grown-ups room, under This device.</p>
+      <button class="gu-btn solid" data-act="su-done" style="margin-top:18px">Done</button>
+      <button class="gu-later" data-act="su-later">Later</button>
+    </div>`;
+      return;
+    }
     $('#guSetup').innerHTML = `<div class="gu-setup">
       <div class="gu-skip"><button data-act="su-skip">Skip</button></div>
       <div class="gu-hi"><img src="${artSrc('ube-cheer')}" alt="Ube Ube waving"><div>Hi! Three quick questions and your child’s day is ready.</div></div>
@@ -5629,13 +5708,18 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>`;
   }
   function openSetup() {
-    suDraft = { name:'', birthday:null, grade:null, schoolDays:[1, 2, 3, 4, 5], leaveTime:null, bed:EMPTY_FAMILY.bedtime.school, walker:'girl' }; suOpen = null;
+    suDraft = { name:'', birthday:null, grade:null, schoolDays:[1, 2, 3, 4, 5], leaveTime:null, bed:EMPTY_FAMILY.bedtime.school, walker:'girl' }; suOpen = null; suStage = 'form';
     renderSetup(); $('#guSetup').hidden = false; $('#guSetup').scrollTop = 0;
   }
   function closeSetup(makeIt) {
     const f = family(), d = suDraft;
     if (makeIt) { f.child.name = d.name.trim().slice(0, 30); f.child.birthday = d.birthday; f.child.grade = d.grade; f.child.walker = d.walker === 'boy' && guWhoShown() ? 'boy' : 'girl'; f.schoolDays = d.schoolDays.slice(); f.leaveTime = d.leaveTime; f.bedtime.school = d.bed }
     f.setupDone = true; save();
+    if (!isStandalone()) { suStage = 'home'; renderSetup(); $('#guSetup').scrollTop = 0; return }   // the Home Screen card comes before setup closes
+    finishSetup();
+  }
+  function finishSetup(homeScreen) {
+    const f = family(); if (homeScreen) { f.homeScreen = homeScreen; save() }
     $('#guSetup').hidden = true; $('#guSetup').innerHTML = ''; suDraft = null;
     applyChildName(); applyWalker(); guard('renderCity', renderCity);
   }
@@ -5644,6 +5728,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const a = el.dataset.act, d = suDraft;
     if (a === 'su-skip') closeSetup(false);
     else if (a === 'su-make') closeSetup(true);
+    else if (a === 'su-done') finishSetup('done');
+    else if (a === 'su-later') finishSetup('later');
     else if (a === 'su-who') { d.walker = el.dataset.v === 'boy' ? 'boy' : 'girl'; renderSetup() }
     else if (a === 'su-time') { suOpen = suOpen === el.dataset.k ? null : el.dataset.k; renderSetup() }
     else if (a === 'su-step') { guStepTime(el.dataset.k, +el.dataset.dir, suTimes); renderSetup() }
