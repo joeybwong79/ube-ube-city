@@ -1069,6 +1069,14 @@ select{flex:1;min-width:0;font:inherit;font-size:16px;padding:11px 10px;border:2
 #guTownList{margin-top:6px}
 #guTownList:empty{display:none}
 #guTownList button.gu-row:active{background:var(--jb-violet-tint)}
+.gu-row .chev{transition:transform .2s ease}
+.gu-row[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.gu-fold{padding:12px 14px 14px;border-top:1px solid #F3ECF8}
+.gu-row.confirm{flex-wrap:wrap}
+.gu-row.confirm .t{flex-basis:100%}
+.gu-row.confirm .gu-btnrow{width:100%}
+.gu-row.confirm .gu-btnrow .gu-sbtn{flex:1}
+#grownups.gu-room>.topbar,#grownups.gu-room>.page-title{display:none}
 .gu-backroom{width:60px;height:60px;flex:none}  /* room for the one back button (.round-back) */
 .gu-nav h1{flex:1;margin:0;text-align:center;text-wrap:balance;overflow-wrap:anywhere;font:700 22px/1.1 var(--f-display);color:var(--jb-ink)}
 .gu-nav .gu-act{border:0;background:none;color:var(--jb-violet-deep);font-weight:700;font-size:17px;min-width:60px;min-height:44px;text-align:right;padding:0}
@@ -1532,7 +1540,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
   };
   window.addEventListener('error', function (e) { reportProblem('error: ' + e.message + ' @' + e.lineno + ':' + e.colno + ' ' + ((e.error && e.error.stack) || '').slice(0, 400)) });
   window.addEventListener('unhandledrejection', function (e) { var r = e.reason; reportProblem('promise: ' + ((r && (r.stack || r.message)) || r)) });
-  var BUILD = '20261127-112839';
+  var BUILD = '20261127-113025';
   reportProblem('opened build ' + BUILD + ' ' + navigator.userAgent + ' ' + innerWidth + 'x' + innerHeight);
   // The iPad keeps its own saved copy (so the app opens while the Mac sleeps). When the Mac is reachable and has a newer build, reload once to get it.
   function checkForUpdate() {
@@ -4905,8 +4913,8 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ---------- grown-ups ---------- */
   let gateAnswer = 0, afterGate = null, guTitleTaps = [];
   // The hidden testing mode: 5 taps on the title within 3 seconds shows the Testing card, 5 more hide it. Never saved.
-  $('#guTitle').addEventListener('click', () => {
-    if ($('#settings').hidden) return;
+  $('#grownups').addEventListener('click', e => {   // the title, now on the home page's bar
+    if ($('#settings').hidden || !e.target.closest('#guTitle, #guHomeBox .gu-nav h1')) return;
     const now = Date.now(); guTitleTaps = guTitleTaps.filter(t => now - t < 3000); guTitleTaps.push(now);
     if (guTitleTaps.length >= 5) { guTitleTaps = []; $('#testingCard').hidden = !$('#testingCard').hidden }
   });
@@ -4915,12 +4923,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const a = 6 + Math.floor(Math.random() * 4), b = 6 + Math.floor(Math.random() * 4);
     gateAnswer = a * b; $('#gateQ').textContent = `${a} × ${b}`;
     $('#gateIn').value = ''; $('#gateMsg').textContent = '';
-    $('#gate').hidden = false; $('#settings').hidden = true; $('#testingCard').hidden = true; guTitleTaps = [];
+    $('#gate').hidden = false; $('#settings').hidden = true; $('#testingCard').hidden = true; guTitleTaps = []; $('#grownups').classList.remove('gu-room');
     go('grownups');
     speak('This part is for grown-ups. Tap home to go back.', null, { lines:['gate'] });
   };
   const tryGate = () => {
-    if (+$('#gateIn').value === gateAnswer) { $('#gate').hidden = true; $('#settings').hidden = false; guReset(); renderSettings(); const next = afterGate; afterGate = null; if (next) next() }
+    if (+$('#gateIn').value === gateAnswer) { $('#gate').hidden = true; $('#settings').hidden = false; $('#grownups').classList.add('gu-room'); guReset(); renderSettings(); const next = afterGate; afterGate = null; if (next) next() }
     else { $('#gateMsg').textContent = 'Not quite. Try again, grown-up!'; $('#gateIn').value = '' }
   };
   $('#gateGo').onclick = tryGate;
@@ -5076,7 +5084,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /* --- the home list --- */
   function renderGuHome() {
     const f = family(), key = keyOf(), override = state.settings.overrides[key] || 'auto', nm = childName();
-    $('#guHomeBox').innerHTML = `
+    $('#guHomeBox').innerHTML = guNav('Grown-ups room') + `
       <div class="gu-lbl">Today</div>
       <div class="gu-grp pad"><div class="gu-t">Today is…</div>
         <div class="gu-seg" id="typeSeg"><button data-type="auto">Auto</button><button data-type="school">School day</button><button data-type="weekend">Day off</button></div>
@@ -5209,7 +5217,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!o || o.app !== 'ube-ube-city' || !o.keys || typeof o.keys !== 'object' || Array.isArray(o.keys) || typeof o.keys[STORE] !== 'string') return bad();
       guLoadPending = o; $('#progressMsg').textContent = '';
       const when = guFileDate(o.savedAt), row = $('#guLoadRow') || $('#guLoadConfirm');
-      row.outerHTML = `<div class="gu-row" id="guLoadConfirm"><span class="t">${when ? `Load the copy from ${guEsc(when)}?` : 'Load this copy?'}<small>What is on this device now is replaced. This cannot be undone.</small></span><button class="gu-sbtn inrow" data-act="file-cancel">Cancel</button><button class="gu-sbtn inrow danger sure" data-act="file-sure">Load it</button></div>`;
+      row.outerHTML = `<div class="gu-row confirm" id="guLoadConfirm"><span class="t">${when ? `Load the copy from ${guEsc(when)}?` : 'Load this copy?'}<small>What is on this device now is replaced. This cannot be undone.</small></span><div class="gu-btnrow"><button class="gu-sbtn" data-act="file-cancel">Cancel</button><button class="gu-sbtn danger sure" data-act="file-sure">Load it</button></div></div>`;
     }, bad);
   }
   function progressLoadFile() {
@@ -5226,12 +5234,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <button class="gu-row" data-act="file-save"><span class="gu-face gu-tvface" style="background:#F4EFF8;color:var(--jb-soft)">${ico('download')}</span><span class="t">Save a copy<small>Downloads a file of the setup, the jar, the stickers and the games. Keep it in Files, or send it to yourself.</small></span></button>
         ${guLoadRowHtml()}
         <button class="gu-row" data-act="move-text" aria-expanded="false"><span class="t">Move as text instead<small>For when a file won’t go across</small></span>${GU_CHEV}</button>
+        <div class="gu-fold" id="guMoveText" hidden><p class="gu-hint" style="margin:0 2px 10px">Copy the stickers, days, stories and games as text, to keep a backup or to move them to another phone, tablet or computer.</p>
+        <div class="gu-btnrow"><button class="gu-sbtn" id="progressCopy" data-act="prog-copy">${ico('copy')} Copy progress</button><button class="gu-sbtn" id="progressPaste" data-act="prog-paste">${ico('clipboard')} Paste progress</button></div>
+        <textarea class="gu-ta" id="progressText" rows="3" spellcheck="false" autocapitalize="off" placeholder="Progress text appears here, or paste it here" aria-label="Progress text"></textarea></div>
       </div>
       <input type="file" id="guLoadFile" accept=".json,application/json" hidden>
       <p class="gu-hint" id="progressMsg" aria-live="polite" style="font-weight:600"></p>
-      <div id="guMoveText" hidden><div class="gu-grp pad"><p class="gu-hint" style="margin:0 2px 10px">Copy the stickers, days, stories and games as text, to keep a backup or to move them to another phone, tablet or computer.</p>
-        <div class="gu-btnrow"><button class="gu-sbtn" id="progressCopy" data-act="prog-copy">${ico('copy')} Copy progress</button><button class="gu-sbtn" id="progressPaste" data-act="prog-paste">${ico('clipboard')} Paste progress</button></div>
-        <textarea class="gu-ta" id="progressText" rows="3" spellcheck="false" autocapitalize="off" placeholder="Progress text appears here, or paste it here" aria-label="Progress text"></textarea></div></div>
       <div class="gu-lbl">Start over</div>
       <div class="gu-grp">
         <div class="gu-row"><span class="t">Start today over<small>Clears today’s stars, story and today’s stickers, so every step can be done again.</small></span><button class="gu-sbtn inrow" id="resetToday" data-act="reset-today">${ico('rotate-ccw')} Start over</button></div>
@@ -5562,7 +5570,7 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'file-load': $('#guLoadFile').click(); break;
       case 'file-cancel': guLoadPending = null; $('#guLoadConfirm').outerHTML = guLoadRowHtml(); break;
       case 'file-sure': progressLoadFile(); break;
-      case 'move-text': { const open = $('#guMoveText').hidden; $('#guMoveText').hidden = !open; el.setAttribute('aria-expanded', open); const c = el.querySelector('.chev'); if (c) c.style.transform = open ? 'rotate(90deg)' : ''; break }
+      case 'move-text': { const open = $('#guMoveText').hidden; $('#guMoveText').hidden = !open; el.setAttribute('aria-expanded', open); break }
       case 'prog-copy': progressCopy(); break;
       case 'prog-paste': progressPaste(el); break;
       case 'reset-today': resetToday(); break;
