@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Privacy at Ube Ube City</title>
+<style>
+@font-face{font-family:'Baloo 2';src:url(fonts/Baloo2.woff2) format('woff2');font-weight:400 800;font-display:swap}
+@font-face{font-family:'Fredoka';src:url(fonts/Fredoka.woff2) format('woff2');font-weight:300 700;font-display:swap}
+:root{--jb-ink:#3B3140;--jb-muted:#6E6377;--jb-ivory:#FFF6EC;--jb-violet-deep:#7C63A8;--jb-violet-tint:#FBF6FE;--jb-pink:#E0739B;
+  --f-display:'Baloo 2',ui-rounded,'SF Pro Rounded','Arial Rounded MT Bold',system-ui,sans-serif;
+  --f-ui:'Fredoka',ui-rounded,'SF Pro Rounded','Arial Rounded MT Bold',system-ui,sans-serif}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--jb-ivory);color:var(--jb-ink);font:400 17px/1.5 var(--f-ui)}
+main{max-width:640px;margin:0 auto;padding:calc(28px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.kicker{font:600 13px/1 var(--f-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--jb-pink);margin:0 6px 6px}
+h1{font:800 34px/1.08 var(--f-display);margin:0 6px 10px}
+.lead{font-size:19px;line-height:1.45;margin:0 6px 22px}
+h2{font:600 12px/1 var(--f-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--jb-muted);margin:24px 6px 8px}
+.grp{background:#fff;border-radius:20px;box-shadow:0 6px 20px rgba(59,49,64,.05);padding:16px 18px}
+.grp p{margin:0 0 10px}.grp p:last-child{margin:0}
+.grp ul{margin:0 0 10px;padding-left:20px}.grp ul:last-child{margin-bottom:0}.grp li{margin:0 0 8px}.grp li:last-child{margin:0}
+b{font-weight:600}
+a{color:var(--jb-violet-deep);font-weight:600;text-underline-offset:3px}
+.mail{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:999px;background:var(--jb-violet-tint);text-decoration:none;font-size:18px}
+.foot{font-size:13px;color:var(--jb-muted);margin:22px 6px 0}
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">Ube Ube City</p>
+  <h1>Privacy at Ube Ube City</h1>
+  <p class="lead">Ube Ube City is a game and daily-routine app for young children, made by two families. We built it to collect as little as possible. This page says exactly what that means.</p>
+
+  <h2>The short version</h2>
+  <div class="grp">
+    <ul>
+      <li>No accounts, no names or emails asked of you, no ads, no tracking, no cookies.</li>
+      <li>What your child does in the app stays on your device.</li>
+<!-- COUNTS-BULLET: put back with the usage counts (mockups/privacy/privacy.html has it) -->
+    </ul>
+  </div>
+
+  <h2>What stays on your device</h2>
+  <div class="grp">
+    <p>The grown-ups' setup is kept in your browser's storage on your device:</p>
+    <ul>
+      <li>the child's first name, birthday and grade, if you enter them;</li>
+      <li>school days, bedtime and routines;</li>
+      <li>the weather town;</li>
+      <li>any lines a grown-up records in their own voice.</li>
+    </ul>
+    <p>Your child's progress is kept there too:</p>
+    <ul>
+      <li>finished steps;</li>
+      <li>stickers;</li>
+      <li>Ube Ube dollars;</li>
+      <li>the games.</li>
+    </ul>
+    <p>We never receive any of it. To move it to another device, use "Save a copy" in the grown-ups room. That makes a file that only you hold.</p>
+    <p>On an iPhone or iPad, Safari may clear a website's storage if it is not opened for 7 days. Adding Ube Ube City to your Home Screen keeps it.</p>
+  </div>
+
+  <h2>The weather</h2>
+  <div class="grp">
+    <p>If you turn on the weather, the app asks <a href="https://open-meteo.com/">Open-Meteo</a> for your town's forecast once a day. It sends only the town's map position, never who you are. When you search for a town in setup, the name you type is sent to Open-Meteo to find it.</p>
+    <p>If you tap "Use my location", your device asks your permission first. The position is used once to name your town, and only the town is kept.</p>
+  </div>
+
+<!-- COUNTS-SECTION: "What we count" goes back here in the push that turns the usage counts on (mockups/privacy/SHEET.md) -->
+
+  <h2>Children</h2>
+  <div class="grp">
+    <p>The app is made for children to use with a grown-up nearby. We do not knowingly collect personal information from children, and the app has no way for a child to send us anything, chat or buy anything with real money. The settings and the grown-ups room are behind a grown-up question.</p>
+    <p>The microphone is used only when a grown-up records their own voice for a line in the grown-ups room. The camera is never used.</p>
+  </div>
+
+  <h2>Deleting everything</h2>
+  <div class="grp">
+    <p>In the grown-ups room, "Clear all progress" removes everything the app saved on that device. Clearing your browser's website data does the same.</p>
+  </div>
+
+  <h2>Questions</h2>
+  <div class="grp">
+    <p>Write to us. A person reads every message.</p>
+    <p><a class="mail" href="mailto:hello@ubeubecity.com">hello@ubeubecity.com</a></p>
+  </div>
+
+  <p class="foot">Last changed 28 November 2026. If this page changes, the date changes too.</p>
+</main>
+</body>
+</html>
