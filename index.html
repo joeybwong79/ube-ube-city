@@ -1591,7 +1591,7 @@ select.gu-in{-webkit-appearance:none;appearance:none}
     };
     window.addEventListener('error', function (e) { reportProblem('error: ' + e.message + ' @' + e.lineno + ':' + e.colno + ' ' + ((e.error && e.error.stack) || '').slice(0, 400)); });
     window.addEventListener('unhandledrejection', function (e) { var r = e.reason; reportProblem('promise: ' + ((r && (r.stack || r.message)) || r)); });
-    var BUILD = '20261128-070108';
+    var BUILD = '20261128-070323';
     reportProblem('opened build ' + BUILD + ' ' + navigator.userAgent + ' ' + innerWidth + 'x' + innerHeight);
     function checkForUpdate() {
         try {
@@ -3634,7 +3634,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const bed = minutesOf(bedtimeFor(key)), left = bed - (h * 60 + m);
             note.hidden = false;
             note.classList.toggle('late', left <= 0);
-            note.textContent = left <= 0 ? `Tickle massage is closed for tonight (${fmtTime(bed)})` : `Tickle massage until ${fmtTime(bed)} · ${left >= 60 ? Math.floor(left / 60) + ' h ' : ''}${left % 60} min left`;
+            if (left <= 0)
+                note.textContent = `Tickle massage is closed for tonight (${fmtTime(bed)})`;
+            else {
+                note.textContent = `Tickle massage until ${fmtTime(bed)} · `;
+                const t = document.createElement('span');
+                t.style.whiteSpace = 'nowrap';
+                t.textContent = `${left >= 60 ? Math.floor(left / 60) + ' h ' : ''}${left % 60} min left`;
+                note.append(t);
+            }
         }
         else
             note.hidden = true;
